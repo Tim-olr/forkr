@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC
+		"-//Apache Software Foundation//DTD Struts Configuration 2.5//EN"
+		"http://struts.apache.org/dtds/struts-2.5.dtd">
+
+<struts>
+	<constant name="struts.enable.DynamicMethodInvocation" value="false" />
+	<constant name="struts.devMode" value="true" />
+	<constant name="struts.ui.theme" value="simple" />
+	<constant name="struts.allowlist.enable" value="false" />
+	<constant name="struts.parameters.requireAnnotations" value="false" />
+
+	<constant name="struts.multipart.parser" value="jakarta-stream"/>
+	<constant name="struts.multipart.maxSize" value="2147483647" />
+	<constant name="struts.multipart.maxFileSize" value="2147483647"/>
+
+	<package name="default" namespace="/" extends="struts-default">
+
+		<action name="login" class="timolr.chess.action.LoginAction">
+			<result name="success" type="redirectAction">home</result>
+			<result name="input">/WEB-INF/jsp/login.jsp</result>
+		</action>
+
+		<action name="register" class="timolr.chess.action.RegisterAction">
+			<result name="success">/WEB-INF/jsp/register.jsp</result>
+			<result name="input">/WEB-INF/jsp/register.jsp</result>
+		</action>
+
+		<action name="verifyEmail" class="timolr.chess.action.VerifyEmailAction">
+			<result name="success">/WEB-INF/jsp/verify-email.jsp</result>
+		</action>
+
+		<action name="googleAuth" class="timolr.chess.action.GoogleAuthAction">
+			<result name="success" type="redirect">${redirectUrl}</result>
+			<result name="notConfigured" type="redirectAction">login</result>
+		</action>
+
+		<action name="googleCallback" class="timolr.chess.action.GoogleCallbackAction">
+			<result name="success" type="redirectAction">home</result>
+			<result name="failure">/WEB-INF/jsp/oauth-error.jsp</result>
+		</action>
+
+		<action name="profile" class="timolr.chess.action.ProfileAction">
+			<result name="success">/WEB-INF/jsp/profile.jsp</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="changePassword" class="timolr.chess.action.ProfileAction" method="changePassword">
+			<result name="success">/WEB-INF/jsp/profile.jsp</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="uploadProfilePic" class="timolr.chess.action.ProfileAction" method="uploadPic">
+			<result name="success">/WEB-INF/jsp/profile.jsp</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="home" class="timolr.chess.action.HomeAction">
+			<result name="success">/WEB-INF/jsp/home.jsp</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="game" class="timolr.chess.action.GameAction">
+			<result name="success">/WEB-INF/jsp/game.jsp</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="online-game" class="timolr.chess.action.OnlineGameAction">
+			<result name="success">/WEB-INF/jsp/online-game.jsp</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="logout" class="timolr.chess.action.HomeAction" method="logout">
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="army-builder" class="timolr.chess.action.ArmyBuilderAction">
+			<result name="success">/WEB-INF/jsp/army-builder.jsp</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="saveArmy" class="timolr.chess.action.SaveArmyAction">
+			<result name="success" type="redirectAction">
+				<param name="actionName">army-builder</param>
+				<param name="loadId">${savedArmyId}</param>
+			</result>
+			<result name="input">/WEB-INF/jsp/army-builder.jsp</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="setActiveArmy" class="timolr.chess.action.SetActiveArmyAction">
+			<result name="success" type="redirectAction">army-builder</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="deleteArmy" class="timolr.chess.action.DeleteArmyAction">
+			<result name="success" type="redirectAction">army-builder</result>
+			<result name="input" type="redirectAction">army-builder</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="admin" class="timolr.chess.action.AdminAction">
+			<result name="success">/WEB-INF/jsp/admin.jsp</result>
+			<result name="forbidden" type="redirectAction">home</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="adminTogglePreset" class="timolr.chess.action.AdminAction" method="togglePreset">
+			<result name="redirect" type="redirectAction">admin</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminToggleAdmin" class="timolr.chess.action.AdminAction" method="toggleAdmin">
+			<result name="redirect" type="redirectAction">admin</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminSetup" class="timolr.chess.action.AdminSetupAction" method="show">
+			<result name="input">/WEB-INF/jsp/admin-setup.jsp</result>
+			<result name="redirect" type="redirectAction">login</result>
+		</action>
+
+		<action name="adminSetupSubmit" class="timolr.chess.action.AdminSetupAction">
+			<result name="success" type="redirectAction">login</result>
+			<result name="input">/WEB-INF/jsp/admin-setup.jsp</result>
+			<result name="redirect" type="redirectAction">login</result>
+		</action>
+
+		<action name="adminEditUser" class="timolr.chess.action.AdminAction" method="editUser">
+			<result name="redirect" type="redirectAction">admin</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminBanUser" class="timolr.chess.action.AdminAction" method="banUser">
+			<result name="redirect" type="redirectAction">admin</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminBanLogs" class="timolr.chess.action.AdminBanLogsAction">
+			<result name="success">/WEB-INF/jsp/admin-ban-logs.jsp</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminSendPasswordReset" class="timolr.chess.action.AdminAction" method="sendPasswordReset">
+			<result name="redirect" type="redirectAction">admin</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminCreateBot" class="timolr.chess.action.AdminAction" method="createBot">
+			<result name="redirect" type="redirectAction">admin</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminSaveBot" class="timolr.chess.action.AdminAction" method="saveBot">
+			<result name="redirect" type="redirectAction">admin</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminDeleteBot" class="timolr.chess.action.AdminAction" method="deleteBot">
+			<result name="redirect" type="redirectAction">admin</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminUploadBotImage" class="timolr.chess.action.AdminAction" method="uploadBotImage">
+			<result name="redirect" type="redirectAction">admin</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="forgotPassword" class="timolr.chess.action.ForgotPasswordAction" method="show">
+			<result name="input">/WEB-INF/jsp/forgot-password.jsp</result>
+		</action>
+
+		<action name="forgotPasswordSubmit" class="timolr.chess.action.ForgotPasswordAction">
+			<result name="success">/WEB-INF/jsp/forgot-password.jsp</result>
+			<result name="input">/WEB-INF/jsp/forgot-password.jsp</result>
+		</action>
+
+		<action name="resetPassword" class="timolr.chess.action.ResetPasswordAction" method="show">
+			<result name="input">/WEB-INF/jsp/reset-password.jsp</result>
+			<result name="redirect" type="redirectAction">login</result>
+		</action>
+
+		<action name="resetPasswordSubmit" class="timolr.chess.action.ResetPasswordAction">
+			<result name="success">/WEB-INF/jsp/reset-password.jsp</result>
+			<result name="input">/WEB-INF/jsp/reset-password.jsp</result>
+			<result name="redirect" type="redirectAction">login</result>
+		</action>
+
+		<action name="onlineQueue" class="timolr.chess.action.OnlineQueueAction">
+			<result type="stream">
+				<param name="contentType">application/json</param>
+				<param name="inputName">jsonStream</param>
+			</result>
+		</action>
+
+		<action name="onlineCancel" class="timolr.chess.action.OnlineCancelAction">
+			<result type="stream">
+				<param name="contentType">application/json</param>
+				<param name="inputName">jsonStream</param>
+			</result>
+		</action>
+
+		<action name="onlinePoll" class="timolr.chess.action.OnlinePollAction">
+			<result type="stream">
+				<param name="contentType">application/json</param>
+				<param name="inputName">jsonStream</param>
+			</result>
+		</action>
+
+		<action name="onlineMove" class="timolr.chess.action.OnlineMoveAction">
+			<result type="stream">
+				<param name="contentType">application/json</param>
+				<param name="inputName">jsonStream</param>
+			</result>
+		</action>
+
+		<action name="onlineFinish" class="timolr.chess.action.OnlineFinishAction">
+			<result type="stream">
+				<param name="contentType">application/json</param>
+				<param name="inputName">jsonStream</param>
+			</result>
+		</action>
+
+		<action name="support" class="timolr.chess.action.SupportAction">
+			<result name="success">/WEB-INF/jsp/support.jsp</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="submitTicket" class="timolr.chess.action.SubmitTicketAction">
+			<result name="success">/WEB-INF/jsp/support.jsp</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="adminTickets" class="timolr.chess.action.AdminTicketAction">
+			<result name="success">/WEB-INF/jsp/admin-tickets.jsp</result>
+			<result name="forbidden" type="redirectAction">home</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="adminClaimTicket" class="timolr.chess.action.AdminTicketAction" method="claim">
+			<result name="redirect" type="redirectAction">adminTickets</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminUnclaimTicket" class="timolr.chess.action.AdminTicketAction" method="unclaim">
+			<result name="redirect" type="redirectAction">adminTickets</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminAssignTicket" class="timolr.chess.action.AdminTicketAction" method="assign">
+			<result name="redirect" type="redirectAction">adminTickets</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminCloseTicket" class="timolr.chess.action.AdminTicketAction" method="close">
+			<result name="redirect" type="redirectAction">adminTickets</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminReopenTicket" class="timolr.chess.action.AdminTicketAction" method="reopen">
+			<result name="redirect" type="redirectAction">adminTickets</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="academy" class="timolr.chess.action.AcademyAction">
+			<result name="success">/WEB-INF/jsp/academy.jsp</result>
+			<result name="login" type="redirectAction">login</result>
+		</action>
+
+		<action name="unlockPiece" class="timolr.chess.action.UnlockPieceAction">
+			<result type="stream">
+				<param name="contentType">application/json</param>
+				<param name="inputName">jsonStream</param>
+			</result>
+		</action>
+
+		<action name="awardKP" class="timolr.chess.action.AwardKPAction">
+			<result type="stream">
+				<param name="contentType">application/json</param>
+				<param name="inputName">jsonStream</param>
+			</result>
+		</action>
+
+		<action name="adminManageAcademy" class="timolr.chess.action.AdminAction" method="manageAcademy">
+			<result type="stream">
+				<param name="contentType">application/json</param>
+				<param name="inputName">jsonStream</param>
+			</result>
+		</action>
+
+	</package>
+
+</struts>

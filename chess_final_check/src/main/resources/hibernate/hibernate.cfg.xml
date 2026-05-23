@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+"-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+"http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+	<session-factory>
+		<property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+		<property name="hibernate.connection.provider_class">org.hibernate.hikaricp.internal.HikariCPConnectionProvider</property>
+		<property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+		<property name="hibernate.connection.url">jdbc:mysql://localhost/chess_final_check?createDatabaseIfNotExist=true&amp;serverTimezone=Europe/Amsterdam&amp;allowPublicKeyRetrieval=true&amp;useSSL=false&amp;cachePrepStmts=true&amp;prepStmtCacheSize=250&amp;prepStmtCacheSqlLimit=2048&amp;useServerPrepStmts=true</property>
+		<property name="hibernate.connection.username">root</property>
+		<property name="hibernate.connection.password">admin</property>
+		<!-- HikariCP pool tuned for 1000 concurrent players -->
+		<property name="hibernate.hikari.poolName">ChessPool</property>
+		<property name="hibernate.hikari.minimumIdle">10</property>
+		<property name="hibernate.hikari.maximumPoolSize">30</property>
+		<property name="hibernate.hikari.idleTimeout">300000</property>
+		<property name="hibernate.hikari.connectionTimeout">20000</property>
+		<property name="hibernate.hikari.maxLifetime">1200000</property>
+		<property name="hibernate.hikari.leakDetectionThreshold">5000</property>
+		<property name="hibernate.hbm2ddl.auto">update</property>
+		<property name="hibernate.show_sql">false</property>
+		<property name="hibernate.current_session_context_class">thread</property>
+		<!-- Statement batching for bulk writes -->
+		<property name="hibernate.jdbc.batch_size">25</property>
+		<property name="hibernate.order_inserts">true</property>
+		<property name="hibernate.order_updates">true</property>
+		<mapping class="timolr.chess.account.User" />
+		<mapping class="timolr.chess.account.BanLog" />
+		<mapping class="timolr.chess.army.Army" />
+		<mapping class="timolr.chess.army.ArmyPiece" />
+		<mapping class="timolr.chess.bot.Bot" />
+		<mapping class="timolr.chess.support.SupportTicket" />
+	</session-factory>
+</hibernate-configuration>

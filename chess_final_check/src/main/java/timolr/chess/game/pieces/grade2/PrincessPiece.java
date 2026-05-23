@@ -1,0 +1,23 @@
+package timolr.chess.game.pieces.grade2;
+
+import timolr.chess.game.pieces.Grade;
+import timolr.chess.game.pieces.Piece;
+import timolr.chess.game.pieces.Teams;
+
+public class PrincessPiece extends Piece {
+
+    public PrincessPiece(Teams team) {
+        setName("Princess");
+        setTeam(team);
+        setGrade(Grade.GRADE_2);
+        setBaseRange(2);
+        setCanMoveForwards(true);
+        setCanMoveBackwards(true);
+        setCanMoveSideways(true);
+        setCanMoveDiagonal(true);
+        setCanMoveInLShape(false);
+        setCanJump(true);
+        setCanMove(true);
+        setCanCapture(true);
+    }
+}
