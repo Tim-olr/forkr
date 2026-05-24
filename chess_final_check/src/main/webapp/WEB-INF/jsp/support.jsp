@@ -167,5 +167,6 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
         });
 });
 </script>
+<%@ include file="_bot-picker.jsp" %>
 </body>
 </html>

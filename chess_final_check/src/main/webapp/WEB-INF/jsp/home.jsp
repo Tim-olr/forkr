@@ -10,6 +10,14 @@
     int kp      = pageContext.findAttribute("knowledgePoints") != null ? (Integer) pageContext.findAttribute("knowledgePoints") : 0;
     int unlocked   = pageContext.findAttribute("unlockedCount") != null ? (Integer) pageContext.findAttribute("unlockedCount") : 6;
     int totalPieces= pageContext.findAttribute("totalPieces") != null ? (Integer) pageContext.findAttribute("totalPieces") : 35;
+
+    // Daily challenge state
+    int  chPlay3Progress = pageContext.findAttribute("chPlay3Progress") != null ? (Integer) pageContext.findAttribute("chPlay3Progress") : 0;
+    boolean chPlay3Claimed = pageContext.findAttribute("chPlay3Claimed") != null && (Boolean) pageContext.findAttribute("chPlay3Claimed");
+    int  chWin1Progress  = pageContext.findAttribute("chWin1Progress") != null ? (Integer) pageContext.findAttribute("chWin1Progress") : 0;
+    boolean chWin1Claimed  = pageContext.findAttribute("chWin1Claimed") != null && (Boolean) pageContext.findAttribute("chWin1Claimed");
+    int  chBuildArmyProgress = pageContext.findAttribute("chBuildArmyProgress") != null ? (Integer) pageContext.findAttribute("chBuildArmyProgress") : 0;
+    boolean chBuildArmyClaimed = pageContext.findAttribute("chBuildArmyClaimed") != null && (Boolean) pageContext.findAttribute("chBuildArmyClaimed");
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -54,7 +62,7 @@
                         </div>
                         <div class="home-stat">
                             <div class="tiny-caps">Knowledge Points</div>
-                            <div class="home-stat-val display"><%= kp %></div>
+                            <div class="home-stat-val display" data-kp="1"><%= kp %></div>
                             <div class="home-stat-unit">KP</div>
                         </div>
                         <div class="home-stat">
@@ -113,33 +121,83 @@
                                 <span style="font-size:13px;font-weight:500">Daily Challenges</span>
                             </div>
                             <div style="padding:6px 16px 12px">
-                                <div class="challenge-row">
-                                    <div class="challenge-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.8 3.6L14 6.2l-3 2.9.7 4.1L8 11.1 4.3 13.2l.7-4.1L2 6.2l4.2-.6L8 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+
+                                <%-- Challenge: Play 3 online games --%>
+                                <%
+                                    boolean p3done = chPlay3Progress >= 3;
+                                    boolean p3claimable = p3done && !chPlay3Claimed;
+                                    String p3barW = (chPlay3Progress * 100 / 3) + "%";
+                                %>
+                                <div class="challenge-row" id="ch-play3">
+                                    <div class="challenge-icon <%= p3done ? "ok" : "" %>">
+                                        <% if (p3done) { %><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        <% } else { %><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.8 3.6L14 6.2l-3 2.9.7 4.1L8 11.1 4.3 13.2l.7-4.1L2 6.2l4.2-.6L8 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+                                        <% } %>
+                                    </div>
                                     <div style="flex:1;min-width:0">
                                         <div class="ch-name">Play 3 online games</div>
-                                        <div class="ch-meta">+50 KP reward</div>
-                                        <div class="ch-bar"><div style="width:33%"></div></div>
+                                        <div class="ch-meta">+50 KP reward<% if (chPlay3Claimed) { %> — <span style="color:var(--moss)">claimed</span><% } %></div>
+                                        <div class="ch-bar"><div style="width:<%= p3barW %>"></div></div>
                                     </div>
-                                    <div class="ch-prog">1/3</div>
-                                </div>
-                                <div class="challenge-row">
-                                    <div class="challenge-icon ok"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                                    <div style="flex:1;min-width:0">
-                                        <div class="ch-name">Win a game with a custom piece</div>
-                                        <div class="ch-meta">+75 KP reward — completed</div>
-                                        <div class="ch-bar"><div style="width:100%"></div></div>
-                                    </div>
+                                    <% if (chPlay3Claimed) { %>
                                     <div class="ch-prog" style="color:var(--moss)">✓</div>
+                                    <% } else if (p3claimable) { %>
+                                    <button class="btn primary" style="padding:3px 10px;font-size:11px" onclick="claimChallenge('play3',this)">Claim</button>
+                                    <% } else { %>
+                                    <div class="ch-prog"><%= chPlay3Progress %>/3</div>
+                                    <% } %>
                                 </div>
-                                <div class="challenge-row">
-                                    <div class="challenge-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+
+                                <%-- Challenge: Win a game --%>
+                                <%
+                                    boolean w1done = chWin1Progress >= 1;
+                                    boolean w1claimable = w1done && !chWin1Claimed;
+                                %>
+                                <div class="challenge-row" id="ch-win1">
+                                    <div class="challenge-icon <%= w1done ? "ok" : "" %>">
+                                        <% if (w1done) { %><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        <% } else { %><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.8 3.6L14 6.2l-3 2.9.7 4.1L8 11.1 4.3 13.2l.7-4.1L2 6.2l4.2-.6L8 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+                                        <% } %>
+                                    </div>
+                                    <div style="flex:1;min-width:0">
+                                        <div class="ch-name">Win a game today</div>
+                                        <div class="ch-meta">+75 KP reward<% if (chWin1Claimed) { %> — <span style="color:var(--moss)">claimed</span><% } %></div>
+                                        <div class="ch-bar"><div style="width:<%= w1done ? "100" : "0" %>%"></div></div>
+                                    </div>
+                                    <% if (chWin1Claimed) { %>
+                                    <div class="ch-prog" style="color:var(--moss)">✓</div>
+                                    <% } else if (w1claimable) { %>
+                                    <button class="btn primary" style="padding:3px 10px;font-size:11px" onclick="claimChallenge('win1',this)">Claim</button>
+                                    <% } else { %>
+                                    <div class="ch-prog"><%= chWin1Progress %>/1</div>
+                                    <% } %>
+                                </div>
+
+                                <%-- Challenge: Build an army --%>
+                                <%
+                                    boolean badone = chBuildArmyProgress >= 1;
+                                    boolean baclaimable = badone && !chBuildArmyClaimed;
+                                %>
+                                <div class="challenge-row" id="ch-build_army">
+                                    <div class="challenge-icon <%= badone ? "ok" : "" %>">
+                                        <% if (badone) { %><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        <% } else { %><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                                        <% } %>
+                                    </div>
                                     <div style="flex:1;min-width:0">
                                         <div class="ch-name">Build an army</div>
-                                        <div class="ch-meta">+30 KP reward</div>
-                                        <div class="ch-bar"><div style="width:0%"></div></div>
+                                        <div class="ch-meta">+30 KP reward<% if (chBuildArmyClaimed) { %> — <span style="color:var(--moss)">claimed</span><% } %></div>
+                                        <div class="ch-bar"><div style="width:<%= badone ? "100" : "0" %>%"></div></div>
                                     </div>
-                                    <div class="ch-prog">0/1</div>
+                                    <% if (chBuildArmyClaimed) { %>
+                                    <div class="ch-prog" style="color:var(--moss)">✓</div>
+                                    <% } else if (baclaimable) { %>
+                                    <button class="btn primary" style="padding:3px 10px;font-size:11px" onclick="claimChallenge('build_army',this)">Claim</button>
+                                    <% } else { %>
+                                    <div class="ch-prog"><%= chBuildArmyProgress %>/1</div>
+                                    <% } %>
                                 </div>
+
                             </div>
                         </div>
 
@@ -186,21 +244,38 @@
     </main>
 </div>
 
-<!-- Bot picker modal -->
-<div class="modal-backdrop" id="botPickerModal" style="display:none" onclick="if(event.target===this)closeBotPicker()">
-    <div class="modal" style="max-width:520px;max-height:82vh;overflow:hidden;display:flex;flex-direction:column">
-        <div class="modal-head">
-            <span class="modal-title">Play vs Bots</span>
-            <button class="modal-close" onclick="closeBotPicker()">✕</button>
-        </div>
-        <div id="botPickerBody" style="overflow-y:auto;flex:1;padding:16px 20px 20px"></div>
-    </div>
-</div>
-
 <script src="${pageContext.request.contextPath}/js/piece-art.js"></script>
 <script>
 var CTX = "${pageContext.request.contextPath}";
-var ALL_BOTS = ${allBotsJson};
+
+function claimChallenge(id, btn) {
+    btn.disabled = true;
+    btn.textContent = '…';
+    fetch(CTX + '/claimChallenge?challengeId=' + id, {method:'POST'})
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+            if (!data.ok) { btn.disabled = false; btn.textContent = 'Claim'; return; }
+            var row = document.getElementById('ch-' + id);
+            // Mark icon as complete
+            var icon = row.querySelector('.challenge-icon');
+            icon.classList.add('ok');
+            icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+            // Fill bar
+            var bar = row.querySelector('.ch-bar div');
+            if (bar) bar.style.width = '100%';
+            // Update meta text
+            var meta = row.querySelector('.ch-meta');
+            if (meta) meta.innerHTML = meta.innerHTML.replace(/\+\d+ KP reward/, function(m){ return m; }) + ' — <span style="color:var(--moss)">claimed</span>';
+            // Replace button with checkmark
+            btn.parentNode.replaceChild(Object.assign(document.createElement('div'), {
+                className: 'ch-prog', style: 'color:var(--moss)', textContent: '✓'
+            }), btn);
+            // Update KP display
+            var kpEl = document.querySelector('.home-stat-val[data-kp]');
+            if (kpEl) kpEl.textContent = data.kp;
+        })
+        .catch(function(){ btn.disabled = false; btn.textContent = 'Claim'; });
+}
 
 // Featured pieces
 (function() {
@@ -223,51 +298,7 @@ var ALL_BOTS = ${allBotsJson};
     });
 }());
 
-function openBotPicker() {
-    renderBotPicker();
-    document.getElementById('botPickerModal').style.display = 'flex';
-}
-function closeBotPicker() {
-    document.getElementById('botPickerModal').style.display = 'none';
-}
-function renderBotPicker() {
-    var container = document.getElementById('botPickerBody');
-    container.innerHTML = '';
-    if (!ALL_BOTS || ALL_BOTS.length === 0) {
-        container.innerHTML = '<div style="color:var(--ink-faint);text-align:center;padding:32px 0;font-size:13px">No bots available yet.</div>';
-        return;
-    }
-    var grouped = {}, order = [];
-    ALL_BOTS.forEach(function(b) {
-        var col = b.collection || 'Bots';
-        if (!grouped[col]) { grouped[col] = []; order.push(col); }
-        grouped[col].push(b);
-    });
-    order.forEach(function(col) {
-        var h = document.createElement('div');
-        h.style.cssText = 'font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);font-family:var(--font-mono);padding:8px 0 6px';
-        h.textContent = col;
-        container.appendChild(h);
-        grouped[col].forEach(function(bot) {
-            var card = document.createElement('div');
-            card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;cursor:pointer;margin-bottom:8px;transition:background .12s';
-            card.onmouseenter = function() { this.style.background='var(--bg-elev)'; };
-            card.onmouseleave = function() { this.style.background=''; };
-            card.onclick = function() { window.location.href = CTX + '/game?botId=' + bot.id; };
-            var iw = document.createElement('div');
-            iw.style.cssText = 'width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--bg-elev-2);display:flex;align-items:center;justify-content:center;border:1px solid var(--line)';
-            if (bot.imagePath) { var img=document.createElement('img'); img.src=CTX+'/'+bot.imagePath; img.style.cssText='width:100%;height:100%;object-fit:cover'; iw.appendChild(img); }
-            else iw.innerHTML='<svg width="22" height="22" viewBox="0 0 45 45"><circle fill="url(#bg0)" stroke="#3a1800" stroke-width="1.5" cx="22.5" cy="11.5" r="5.5"/></svg>';
-            var info = document.createElement('div'); info.style.flex='1';
-            info.innerHTML='<div style="font-size:13.5px;font-weight:500">'+escHtml(bot.name)+'</div><div style="color:var(--ink-faint);font-size:12px">'+bot.elo+' ELO</div>';
-            var btn = document.createElement('button'); btn.className='btn sm'; btn.textContent='Play';
-            btn.onclick=function(e){e.stopPropagation();window.location.href=CTX+'/game?botId='+bot.id;};
-            card.appendChild(iw); card.appendChild(info); card.appendChild(btn);
-            container.appendChild(card);
-        });
-    });
-}
-function escHtml(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 </script>
+<%@ include file="_bot-picker.jsp" %>
 </body>
 </html>

@@ -104,6 +104,35 @@ public class EmailService {
         }
     }
 
+    public static void sendPolicyUpdateEmail(String toEmail, String username, String policyType, String policyLink) {
+        if (!isConfigured()) return;
+        try {
+            Properties props = buildProps();
+            Session session = Session.getInstance(props, new Authenticator() {
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(USER, PASS);
+                }
+            });
+            String policyName = "terms".equals(policyType) ? "Terms of Service" : "Privacy Policy";
+            Message msg = new MimeMessage(session);
+            msg.setFrom(new InternetAddress(USER, "Forkr Chess"));
+            msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
+            msg.setSubject("Forkr " + policyName + " Updated");
+            msg.setText(
+                "Hello " + username + ",\n\n" +
+                "We've updated our " + policyName + ".\n\n" +
+                "Please review the updated policy at the link below:\n\n" +
+                policyLink + "\n\n" +
+                "By continuing to use Forkr, you agree to the updated " + policyName + ".\n\n" +
+                "If you have any questions, please contact our support team.\n\n" +
+                "— The Forkr Team"
+            );
+            Transport.send(msg);
+        } catch (Exception e) {
+            System.err.println("[EmailService] Failed to send policy update email to " + toEmail + ": " + e.getMessage());
+        }
+    }
+
     private static Properties buildProps() {
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");

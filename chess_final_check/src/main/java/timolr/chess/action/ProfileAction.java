@@ -33,6 +33,9 @@ public class ProfileAction extends ActionSupport {
     private String confirmNewPassword;
     private String profileMessage;
 
+    // Delete account
+    private String deletePassword;
+
     @Override
     public String execute() {
         HttpSession session = ServletActionContext.getRequest().getSession(false);
@@ -133,6 +136,29 @@ public class ProfileAction extends ActionSupport {
         return SUCCESS;
     }
 
+    public String deleteAccount() {
+        HttpSession session = ServletActionContext.getRequest().getSession(false);
+        if (session == null || session.getAttribute("userId") == null) return "login";
+
+        Long userId = (Long) session.getAttribute("userId");
+        UserDAO dao = new UserDAO();
+        User user = dao.findById(userId);
+        if (user == null) return "login";
+
+        if (deletePassword == null || deletePassword.isBlank()
+                || !PasswordHasher.verify(deletePassword, user.getPasswordHash())) {
+            profileMessage = "Incorrect password. Your account was not deleted.";
+            profileUser = user;
+            userArmies = new ArmyDAO().findByOwner(userId);
+            return SUCCESS;
+        }
+
+        new ArmyDAO().deleteAllByOwner(userId);
+        dao.deleteUser(userId);
+        session.invalidate();
+        return "login";
+    }
+
     public User getProfileUser() { return profileUser; }
     public List<Army> getUserArmies() { return userArmies; }
     public String getProfileMessage() { return profileMessage; }
@@ -143,4 +169,6 @@ public class ProfileAction extends ActionSupport {
     public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
     public String getConfirmNewPassword() { return confirmNewPassword; }
     public void setConfirmNewPassword(String confirmNewPassword) { this.confirmNewPassword = confirmNewPassword; }
+    public String getDeletePassword() { return deletePassword; }
+    public void setDeletePassword(String deletePassword) { this.deletePassword = deletePassword; }
 }

@@ -64,6 +64,28 @@ public class UserDAO {
         }
     }
 
+    public boolean anyOwnerExists() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Long count = session.createQuery(
+                            "SELECT COUNT(u) FROM User u WHERE u.role = :role", Long.class)
+                    .setParameter("role", UserRole.OWNER)
+                    .uniqueResult();
+            return count != null && count > 0;
+        }
+    }
+
+    public void setRole(Long id, UserRole role) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            session.beginTransaction();
+            User user = session.get(User.class, id);
+            if (user != null) {
+                user.setRole(role);
+                session.merge(user);
+            }
+            session.getTransaction().commit();
+        }
+    }
+
     public java.util.List<User> findAll() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery("FROM User ORDER BY username", User.class).list();
@@ -233,6 +255,30 @@ public class UserDAO {
                 "FROM User WHERE googleId = :googleId", User.class)
                 .setParameter("googleId", googleId)
                 .uniqueResult();
+        }
+    }
+
+    public void updateChallengeState(Long id, java.time.LocalDate date, String flags) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            session.beginTransaction();
+            User user = session.get(User.class, id);
+            if (user != null) {
+                user.setChallengeDate(date);
+                user.setChallengeFlags(flags != null ? flags : "");
+                session.merge(user);
+            }
+            session.getTransaction().commit();
+        }
+    }
+
+    public void deleteUser(Long id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            session.beginTransaction();
+            User user = session.get(User.class, id);
+            if (user != null) {
+                session.remove(user);
+            }
+            session.getTransaction().commit();
         }
     }
 }

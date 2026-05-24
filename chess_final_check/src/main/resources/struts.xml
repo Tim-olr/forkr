@@ -5,14 +5,14 @@
 
 <struts>
 	<constant name="struts.enable.DynamicMethodInvocation" value="false" />
-	<constant name="struts.devMode" value="true" />
+	<constant name="struts.devMode" value="false" />
 	<constant name="struts.ui.theme" value="simple" />
 	<constant name="struts.allowlist.enable" value="false" />
 	<constant name="struts.parameters.requireAnnotations" value="false" />
 
 	<constant name="struts.multipart.parser" value="jakarta-stream"/>
-	<constant name="struts.multipart.maxSize" value="2147483647" />
-	<constant name="struts.multipart.maxFileSize" value="2147483647"/>
+	<constant name="struts.multipart.maxSize" value="10485760" />
+	<constant name="struts.multipart.maxFileSize" value="10485760"/>
 
 	<package name="default" namespace="/" extends="struts-default">
 
@@ -111,6 +111,11 @@
 		</action>
 
 		<action name="adminToggleAdmin" class="timolr.chess.action.AdminAction" method="toggleAdmin">
+			<result name="redirect" type="redirectAction">admin</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminToggleCoOwner" class="timolr.chess.action.AdminAction" method="toggleCoOwner">
 			<result name="redirect" type="redirectAction">admin</result>
 			<result name="forbidden" type="redirectAction">home</result>
 		</action>
@@ -274,6 +279,20 @@
 			</result>
 		</action>
 
+		<action name="botsJson" class="timolr.chess.action.BotJsonAction">
+			<result type="stream">
+				<param name="contentType">application/json</param>
+				<param name="inputName">jsonStream</param>
+			</result>
+		</action>
+
+		<action name="claimChallenge" class="timolr.chess.action.ClaimChallengeAction">
+			<result type="stream">
+				<param name="contentType">application/json</param>
+				<param name="inputName">jsonStream</param>
+			</result>
+		</action>
+
 		<action name="awardKP" class="timolr.chess.action.AwardKPAction">
 			<result type="stream">
 				<param name="contentType">application/json</param>
@@ -321,6 +340,27 @@
 				<param name="tab">matches</param>
 			</result>
 			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminSendPolicyEmail" class="timolr.chess.action.AdminAction" method="sendPolicyEmail">
+			<result name="redirect" type="redirectAction">
+				<param name="actionName">admin</param>
+				<param name="tab">settings</param>
+			</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="deleteAccount" class="timolr.chess.action.ProfileAction" method="deleteAccount">
+			<result name="login" type="redirectAction">login</result>
+			<result name="success">/WEB-INF/jsp/profile.jsp</result>
+		</action>
+
+		<action name="privacy-policy">
+			<result>/WEB-INF/jsp/privacy-policy.jsp</result>
+		</action>
+
+		<action name="terms">
+			<result>/WEB-INF/jsp/terms.jsp</result>
 		</action>
 
 	</package>

@@ -190,7 +190,7 @@ var PIECE_DEFS = [
                     <input type="hidden" id="army-id" value="">
                     <button class="btn btn-outline ab-btn-sm" onclick="clearBoard()" title="New army">New</button>
                 </div>
-                <div id="ab-status" class="ab-status ab-status-empty">Fill all 16 squares. King must be in the back rank on its own color.</div>
+                <div id="ab-status" class="ab-status ab-status-empty">Fill all 16 squares. G0 pieces go on the upper rank; G1/G2/G3 go on the back rank.</div>
             </div>
 
             <!-- Placement Board -->
@@ -237,9 +237,9 @@ var PIECE_DEFS = [
             </div>
 
             <div class="ab-grade-legend">
-                <div class="ab-legend-item"><span class="ab-grade-badge g0">G0</span> Pawn: max 8</div>
-                <div class="ab-legend-item"><span class="ab-grade-badge g1">G1</span> Knight/Rook/Bishop: 2, diff. colors</div>
-                <div class="ab-legend-item"><span class="ab-grade-badge g2">G2</span> Queen: max 1</div>
+                <div class="ab-legend-item"><span class="ab-grade-badge g0">G0</span> Pawn: max 8, upper rank only</div>
+                <div class="ab-legend-item"><span class="ab-grade-badge g1">G1</span> Minor: max 2, diff. colors, back rank</div>
+                <div class="ab-legend-item"><span class="ab-grade-badge g2">G2</span> Major: max 1, back rank</div>
                 <div class="ab-legend-item"><span class="ab-grade-badge g3">G3</span> King: 1, back rank, own color</div>
             </div>
 
@@ -291,6 +291,9 @@ function validRanks(team) {
 }
 function backRank(team) {
     return team === 'WHITE' ? 1 : 8;
+}
+function upperRank(team) {
+    return team === 'WHITE' ? 2 : 7;
 }
 const BOARD_SIZE = 16; // 2 ranks × 8 files
 
@@ -358,6 +361,10 @@ function canPlace(pieceType, col, rank) {
     // Grade 2: total grade-2 cap
     if (grade === 2 && countGrade2OnBoard() >= GRADE_MAX_G2_TOTAL) return false;
 
+    // G0 (pawns): upper rank only; G1/G2/G3: back rank only
+    if (grade === 0 && rank !== upperRank(currentTeam)) return false;
+    if (grade >= 1 && rank !== backRank(currentTeam)) return false;
+
     // Grade 1: if placing the 2nd of same type, must be on different color than first
     if (grade === 1 && currentCount === 1) {
         const existing = getPlacedOfType(pieceType)[0];
@@ -366,12 +373,11 @@ function canPlace(pieceType, col, rank) {
         if (existingLight === newLight) return false;
     }
 
-    // King (Grade 3): must be in back rank; white king on dark, black king on light
+    // King (Grade 3): white king on dark, black king on light
     if (grade === 3) {
-        if (rank !== backRank(currentTeam)) return false;
         const light = isLightSquare(col, rank);
-        if (currentTeam === 'WHITE' && light) return false;   // white king on dark tile
-        if (currentTeam === 'BLACK' && !light) return false;  // black king on light tile
+        if (currentTeam === 'WHITE' && light) return false;
+        if (currentTeam === 'BLACK' && !light) return false;
     }
 
     return true;
@@ -746,7 +752,7 @@ function validateAndShowStatus() {
 
     if (total === 0) {
         statusEl.className = 'ab-status ab-status-empty';
-        statusEl.textContent = 'Fill all 16 squares. King must be in the back rank on its own color.';
+        statusEl.textContent = 'Fill all 16 squares. G0 pieces go on the upper rank; G1/G2/G3 go on the back rank.';
     } else if (errors.length === 0) {
         statusEl.className = 'ab-status ab-status-ok';
         statusEl.textContent = '✓ Army is complete and ready to save!';
@@ -1286,5 +1292,6 @@ function closePieceInfo() {
 </div>
 </main>
 </div>
+<%@ include file="_bot-picker.jsp" %>
 </body>
 </html>

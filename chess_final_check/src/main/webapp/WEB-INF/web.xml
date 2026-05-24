@@ -7,6 +7,15 @@
     <display-name>Chess Final Check</display-name>
 
     <filter>
+        <filter-name>rateLimitFilter</filter-name>
+        <filter-class>timolr.chess.filter.RateLimitFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>rateLimitFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter>
         <filter-name>struts2</filter-name>
         <filter-class>org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter</filter-class>
     </filter>

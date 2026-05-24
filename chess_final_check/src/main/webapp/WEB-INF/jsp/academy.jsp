@@ -776,5 +776,6 @@ renderTree();
 </script>
 </main>
 </div>
+<%@ include file="_bot-picker.jsp" %>
 </body>
 </html>

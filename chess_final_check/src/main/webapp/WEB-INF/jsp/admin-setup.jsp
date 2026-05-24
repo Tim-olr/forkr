@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>First Admin Setup - Forkr</title>
+    <title>Owner Setup - Forkr</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chess.css">
 </head>
 <body>
@@ -20,11 +20,11 @@
     <div class="auth-card">
         <div class="auth-logo">
             <div class="logo-icon">&#9876;</div>
-            <div class="logo-text" style="color:var(--error)">First Admin Setup</div>
+            <div class="logo-text" style="color:var(--error)">Owner Setup</div>
         </div>
         <p style="text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:20px">
-            This page is only available when no admin account exists.
-            Create the first administrator account to get started.
+            This page is only available when no owner account exists.
+            Create the owner account to get started.
         </p>
 
         <s:if test="hasActionErrors()">
@@ -54,7 +54,7 @@
             </div>
             <div class="form-submit">
                 <button type="submit" class="btn btn-full btn-lg" style="background:var(--error);color:#fff">
-                    Create Admin Account
+                    Create Owner Account
                 </button>
             </div>
         </s:form>

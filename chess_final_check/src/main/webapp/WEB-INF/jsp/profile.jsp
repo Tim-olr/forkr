@@ -44,9 +44,9 @@
                 <!-- Left: avatar + stats -->
                 <div style="display:flex;flex-direction:column;gap:14px">
                     <div class="card" style="padding:24px;display:flex;flex-direction:column;align-items:center;gap:12px">
-                        <div class="avatar" style="width:72px;height:72px;font-size:28px;flex-shrink:0">
+                        <div class="avatar" style="width:72px;height:72px;font-size:28px;flex-shrink:0;border-radius:50%;overflow:hidden;<% if (picPath != null && !picPath.isEmpty()) { %>background:none;<% } %>">
                             <% if (picPath != null && !picPath.isEmpty()) { %>
-                                <img src="${pageContext.request.contextPath}/<%= picPath %>" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="Avatar">
+                                <img src="${pageContext.request.contextPath}/<%= picPath %>" style="width:100%;height:100%;object-fit:cover;display:block" alt="Avatar">
                             <% } else { %><%= avatarLetter %><% } %>
                         </div>
                         <div style="text-align:center">
@@ -107,6 +107,13 @@
                         </form>
                     </div>
 
+                    <!-- Danger Zone: Delete Account -->
+                    <div class="card" style="padding:20px;border-color:rgba(200,85,61,0.3)">
+                        <div style="font-size:14px;font-weight:500;margin-bottom:6px;color:var(--crimson)">Danger Zone</div>
+                        <div style="font-size:13px;color:var(--ink-faint);margin-bottom:14px">Permanently delete your account and all associated data. This action cannot be undone.</div>
+                        <button type="button" class="btn danger" onclick="document.getElementById('deleteAccountModal').style.display='flex'">Delete My Account</button>
+                    </div>
+
                     <!-- My Armies -->
                     <div class="card" style="padding:20px">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -136,6 +143,27 @@
             </div>
         </div>
     </main>
+</div>
+<%@ include file="_bot-picker.jsp" %>
+
+<div class="modal-overlay" id="deleteAccountModal" style="display:none;align-items:center;justify-content:center">
+    <div class="modal-box" style="max-width:420px">
+        <div class="modal-header-row">
+            <div class="modal-title" style="color:var(--crimson)">Delete Account</div>
+            <button class="modal-close-btn" onclick="document.getElementById('deleteAccountModal').style.display='none'">&times;</button>
+        </div>
+        <p style="font-size:13px;color:var(--ink-mute);margin:8px 0 16px">This will permanently delete your account, all your armies, and all your data. <strong style="color:var(--ink)">This cannot be undone.</strong></p>
+        <form method="POST" action="${pageContext.request.contextPath}/deleteAccount">
+            <div class="form-group">
+                <label class="form-label">Confirm your password to proceed</label>
+                <input type="password" name="deletePassword" class="form-input" placeholder="Enter your current password" required autofocus>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+                <button type="submit" class="btn danger" style="flex:1">Yes, Delete My Account</button>
+                <button type="button" class="btn" onclick="document.getElementById('deleteAccountModal').style.display='none'" style="flex:1">Cancel</button>
+            </div>
+        </form>
+    </div>
 </div>
 </body>
 </html>

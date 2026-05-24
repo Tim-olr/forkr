@@ -26,9 +26,19 @@ public class RegisterAction extends ActionSupport {
     private String password;
     private String confirmPassword;
     private String registerMessage;
+    private boolean agreeTerms;
+    private boolean ageConfirm;
 
     @Override
     public String execute() {
+        if (!agreeTerms) {
+            addActionError("You must agree to the Terms of Service and Privacy Policy.");
+            return INPUT;
+        }
+        if (!ageConfirm) {
+            addActionError("You must confirm that you are 13 years of age or older.");
+            return INPUT;
+        }
         if (username == null || username.isBlank()) {
             addActionError("Username is required.");
             return INPUT;
@@ -109,4 +119,8 @@ public class RegisterAction extends ActionSupport {
     public void setConfirmPassword(String confirmPassword) { this.confirmPassword = confirmPassword; }
 
     public String getRegisterMessage() { return registerMessage; }
+    public boolean isAgreeTerms() { return agreeTerms; }
+    public void setAgreeTerms(boolean agreeTerms) { this.agreeTerms = agreeTerms; }
+    public boolean isAgeConfirm() { return ageConfirm; }
+    public void setAgeConfirm(boolean ageConfirm) { this.ageConfirm = ageConfirm; }
 }

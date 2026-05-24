@@ -65,6 +65,16 @@
                     <label for="confirmPassword">Confirm Password</label>
                     <s:password id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" />
                 </div>
+                <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:12px;background:var(--bg-elev);border:1px solid var(--line);border-radius:5px">
+                    <label style="display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:13px;color:var(--ink-mute);line-height:1.4">
+                        <input type="checkbox" name="agreeTerms" value="true" style="margin-top:2px;flex-shrink:0;accent-color:var(--amber)">
+                        <span>I have read and agree to the <a href="${pageContext.request.contextPath}/terms" target="_blank" style="color:var(--amber);text-decoration:none">Terms of Service</a> and <a href="${pageContext.request.contextPath}/privacy-policy" target="_blank" style="color:var(--amber);text-decoration:none">Privacy Policy</a>.</span>
+                    </label>
+                    <label style="display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:13px;color:var(--ink-mute);line-height:1.4">
+                        <input type="checkbox" name="ageConfirm" value="true" style="margin-top:2px;flex-shrink:0;accent-color:var(--amber)">
+                        <span>I confirm that I am <strong style="color:var(--ink)">13 years of age or older</strong>. I understand that accounts found to belong to users under 13 may be permanently deleted.</span>
+                    </label>
+                </div>
                 <button type="submit" class="btn primary lg" style="width:100%;margin-top:6px">Create Account</button>
             </s:form>
             </s:if>

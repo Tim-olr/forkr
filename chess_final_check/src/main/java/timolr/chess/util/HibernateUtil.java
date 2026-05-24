@@ -9,9 +9,16 @@ public class HibernateUtil {
 
     static {
         try {
-            SESSION_FACTORY = new Configuration()
-                    .configure("hibernate/hibernate.cfg.xml")
-                    .buildSessionFactory();
+            Configuration cfg = new Configuration().configure("hibernate/hibernate.cfg.xml");
+            // Allow environment variables to override hardcoded dev credentials at runtime.
+            // Set DB_URL, DB_USER, DB_PASS in the server environment for production.
+            String dbUrl  = System.getenv("DB_URL");
+            String dbUser = System.getenv("DB_USER");
+            String dbPass = System.getenv("DB_PASS");
+            if (dbUrl  != null && !dbUrl.isBlank())  cfg.setProperty("hibernate.connection.url",      dbUrl);
+            if (dbUser != null && !dbUser.isBlank()) cfg.setProperty("hibernate.connection.username", dbUser);
+            if (dbPass != null)                      cfg.setProperty("hibernate.connection.password", dbPass);
+            SESSION_FACTORY = cfg.buildSessionFactory();
         } catch (Exception e) {
             throw new ExceptionInInitializerError(e);
         }

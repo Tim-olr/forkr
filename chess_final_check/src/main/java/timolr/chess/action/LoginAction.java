@@ -41,6 +41,7 @@ public class LoginAction extends ActionSupport {
         session.setAttribute("userId", user.getId());
         session.setAttribute("username", user.getUsername());
         session.setAttribute("isAdmin", user.isAdmin());
+        session.setAttribute("userRole", user.getRole() != null ? user.getRole().name() : "USER");
         session.setAttribute("elo", user.getElo());
         session.setAttribute("profilePicPath", user.getProfilePicPath());
         return SUCCESS;

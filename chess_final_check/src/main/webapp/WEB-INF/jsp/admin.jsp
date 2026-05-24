@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="s" uri="/struts-tags" %>
-<%@ page import="timolr.chess.account.User, java.util.List" %>
+<%@ page import="timolr.chess.account.User, timolr.chess.account.UserRole, java.util.List" %>
 <%@ page import="timolr.chess.bot.Bot" %>
 <%@ page import="timolr.chess.army.Army" %>
 <%@ page import="timolr.chess.game.MatchRecord" %>
@@ -25,6 +25,9 @@
     List<BanLog> banLogs = (List<BanLog>) pageContext.findAttribute("banLogs");
 
     Long currentUserId = (Long) session.getAttribute("userId");
+    String viewerRole    = (String) session.getAttribute("userRole");
+    boolean viewerIsOwner   = "OWNER".equals(viewerRole);
+    boolean viewerIsCoOwner = "CO_OWNER".equals(viewerRole);
     if (users == null) users = new java.util.ArrayList<>();
     if (bots == null) bots = new java.util.ArrayList<>();
     if (presetArmies == null) presetArmies = new java.util.ArrayList<>();
@@ -36,8 +39,10 @@
 
     long adminCount = users.stream().filter(User::isAdmin).count();
     long bannedCount = users.stream().filter(User::isBanned).count();
-    int openReportsCount = pageContext.findAttribute("openReportsCount") != null ? (Integer) pageContext.findAttribute("openReportsCount") : 0;
-    int totalMatchCount = pageContext.findAttribute("totalMatchCount") != null ? (Integer) pageContext.findAttribute("totalMatchCount") : 0;
+    long ownerCount   = users.stream().filter(User::isOwner).count();
+    long coOwnerCount = users.stream().filter(User::isCoOwner).count();
+    int openReportsCount = pageContext.findAttribute("openReportsCount") != null ? ((Number) pageContext.findAttribute("openReportsCount")).intValue() : 0;
+    int totalMatchCount = pageContext.findAttribute("totalMatchCount") != null ? ((Number) pageContext.findAttribute("totalMatchCount")).intValue() : 0;
     ObjectMapper jsonMapper = new ObjectMapper();
 
     java.util.Set<String> existingCollections = new java.util.LinkedHashSet<>();
@@ -102,7 +107,7 @@
     <main class="page">
         <div class="page-head">
             <div class="crumb">
-                <span class="crumb-pre">Admin</span>
+                <span class="crumb-pre"><% if (viewerIsOwner) { %>Owner<% } else if (viewerIsCoOwner) { %>Co-Owner<% } else { %>Admin<% } %></span>
                 <h2>Panel</h2>
             </div>
             <div class="page-actions">
@@ -122,7 +127,7 @@
                     <div class="val"><%= users.size() %></div>
                 </div>
                 <div class="kpi">
-                    <div class="label">Admins</div>
+                    <div class="label">Staff</div>
                     <div class="val"><%= adminCount %></div>
                 </div>
                 <div class="kpi">
@@ -206,16 +211,30 @@
                     <thead><tr><th>#</th><th>Username</th><th>Email</th><th>ELO</th><th>KP</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
                     <tbody>
                     <% for (User u : users) {
-                        boolean isBanned = u.isBanned();
-                        boolean isAdminUser = u.isAdmin();
+                        boolean isBanned      = u.isBanned();
+                        boolean isOwnerUser   = u.isOwner();
+                        boolean isCoOwnerUser = u.isCoOwner();
+                        boolean isAdminUser   = u.getRole() == UserRole.ADMIN;
+                        boolean isElevated    = u.isAdmin(); // any elevated role
                         boolean isCurrentUser = u.getId().equals(currentUserId);
+                        String  profilePic    = u.getProfilePicPath();
+
+                        // Permission flags for this row
+                        boolean canBan = !isCurrentUser && !isOwnerUser
+                            && (viewerIsOwner || viewerIsCoOwner || !isElevated);
+                        boolean canToggleAdmin   = !isCurrentUser && !isOwnerUser && (viewerIsOwner || viewerIsCoOwner);
+                        boolean canToggleCoOwner = !isCurrentUser && !isOwnerUser && viewerIsOwner;
                     %>
                     <tr>
                         <td style="color:var(--ink-faint);font-family:var(--font-mono);font-size:11px"><%= u.getId() %></td>
                         <td>
                             <div style="display:flex;align-items:center;gap:8px">
-                                <div class="avatar" style="width:24px;height:24px;font-size:10px;flex-shrink:0">
+                                <div class="avatar" style="width:32px;height:32px;font-size:12px;flex-shrink:0;<% if (profilePic != null && !profilePic.isEmpty()) { %>border-radius:50%;overflow:hidden;background:none;padding:0;<% } %>">
+                                    <% if (profilePic != null && !profilePic.isEmpty()) { %>
+                                    <img src="${pageContext.request.contextPath}/<%= esc(profilePic) %>" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%" alt="<%= esc(u.getUsername()) %>">
+                                    <% } else { %>
                                     <%= u.getUsername() != null && !u.getUsername().isEmpty() ? String.valueOf(u.getUsername().charAt(0)).toUpperCase() : "?" %>
+                                    <% } %>
                                 </div>
                                 <span style="font-weight:500"><%= esc(u.getUsername()) %></span>
                                 <% if (isCurrentUser) { %><span class="tag" style="font-size:9px">you</span><% } %>
@@ -225,7 +244,9 @@
                         <td style="font-family:var(--font-mono)"><%= u.getElo() %></td>
                         <td style="font-family:var(--font-mono)"><%= u.getKnowledgePoints() %></td>
                         <td>
-                            <% if (isAdminUser) { %><span class="tag" style="color:var(--amber);border-color:rgba(212,164,74,.3)">Admin</span>
+                            <% if (isOwnerUser) { %><span class="tag" style="color:#e8b04b;border-color:rgba(232,176,75,.4);font-weight:600">Owner</span>
+                            <% } else if (isCoOwnerUser) { %><span class="tag" style="color:#b07de0;border-color:rgba(176,125,224,.4)">Co-Owner</span>
+                            <% } else if (isAdminUser) { %><span class="tag" style="color:var(--amber);border-color:rgba(212,164,74,.3)">Admin</span>
                             <% } else { %><span class="tag">Player</span><% } %>
                         </td>
                         <td>
@@ -236,16 +257,47 @@
                         <td>
                             <div style="display:flex;gap:4px;flex-wrap:wrap">
                                 <button type="button" class="admin-toggle-btn" onclick="openEditModal(<%= u.getId() %>,'<%= esc(u.getUsername()) %>','<%= esc(u.getEmail()) %>')">Edit</button>
-                                <% if (!isCurrentUser) { %>
+
+                                <% if (canBan) { %>
                                 <button type="button" class="admin-toggle-btn <%= isBanned ? "" : "danger" %>"
                                     onclick="openBanReasonModal(<%= u.getId() %>,'<%= esc(u.getUsername()) %>',<%= isBanned %>)">
                                     <%= isBanned ? "Unban" : "Ban" %>
                                 </button>
                                 <% } %>
-                                <form method="POST" action="${pageContext.request.contextPath}/adminToggleAdmin" style="display:inline">
-                                    <input type="hidden" name="toggleAdminUserId" value="<%= u.getId() %>">
-                                    <button type="submit" class="admin-toggle-btn" <%= isCurrentUser ? "disabled" : "" %>><%= isAdminUser ? "Remove Admin" : "Make Admin" %></button>
-                                </form>
+
+                                <% if (canToggleAdmin) { %>
+                                    <% if (isCoOwnerUser) { /* co-owner: no admin toggle, use co-owner toggle instead */ %>
+                                    <% } else if (isAdminUser) { %>
+                                    <form method="POST" action="${pageContext.request.contextPath}/adminToggleAdmin" style="display:inline">
+                                        <input type="hidden" name="toggleAdminId" value="<%= u.getId() %>">
+                                        <input type="hidden" name="toggleAdminValue" value="false">
+                                        <button type="submit" class="admin-toggle-btn danger">Remove Admin</button>
+                                    </form>
+                                    <% } else { %>
+                                    <form method="POST" action="${pageContext.request.contextPath}/adminToggleAdmin" style="display:inline">
+                                        <input type="hidden" name="toggleAdminId" value="<%= u.getId() %>">
+                                        <input type="hidden" name="toggleAdminValue" value="true">
+                                        <button type="submit" class="admin-toggle-btn">Make Admin</button>
+                                    </form>
+                                    <% } %>
+                                <% } %>
+
+                                <% if (canToggleCoOwner) { %>
+                                    <% if (isCoOwnerUser) { %>
+                                    <form method="POST" action="${pageContext.request.contextPath}/adminToggleCoOwner" style="display:inline">
+                                        <input type="hidden" name="toggleCoOwnerId" value="<%= u.getId() %>">
+                                        <input type="hidden" name="toggleCoOwnerValue" value="false">
+                                        <button type="submit" class="admin-toggle-btn danger">Remove Co-Owner</button>
+                                    </form>
+                                    <% } else if (isAdminUser) { %>
+                                    <form method="POST" action="${pageContext.request.contextPath}/adminToggleCoOwner" style="display:inline">
+                                        <input type="hidden" name="toggleCoOwnerId" value="<%= u.getId() %>">
+                                        <input type="hidden" name="toggleCoOwnerValue" value="true">
+                                        <button type="submit" class="admin-toggle-btn" style="color:var(--amber);border-color:rgba(176,125,224,.3)">Make Co-Owner</button>
+                                    </form>
+                                    <% } %>
+                                <% } %>
+
                                 <button type="button" class="admin-toggle-btn" onclick="openAcademyModal(<%= u.getId() %>,'<%= esc(u.getUsername()) %>',<%= u.getKnowledgePoints() %>,'<%= u.getUnlockedPieces() != null ? esc(u.getUnlockedPieces()) : "" %>')">Academy</button>
                                 <form method="POST" action="${pageContext.request.contextPath}/adminSendPasswordReset" style="display:inline">
                                     <input type="hidden" name="resetUserId" value="<%= u.getId() %>">
@@ -442,7 +494,7 @@
                                 <span class="tag" style="<%= "CLOSED".equals(ts) ? "color:var(--ink-faint)" : "CLAIMED".equals(ts) ? "color:var(--amber);border-color:rgba(212,164,74,.3)" : "color:var(--moss);border-color:rgba(122,148,97,.3)" %>"><%= ts %></span>
                             </td>
                             <td style="color:var(--ink-mute);font-size:12px"><%= st.getClaimedBy() != null ? esc(st.getClaimedBy().getUsername()) : "—" %></td>
-                            <td style="font-size:12px;color:var(--ink-faint)"><%= st.getCreatedAt() != null ? st.getCreatedAt().toLocalDate().toString() : "—" %></td>
+                            <td style="font-size:12px;color:var(--ink-faint)"><%= st.getCreatedAt() != null ? st.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString() : "—" %></td>
                         </tr>
                         <% } %>
                         </tbody>
@@ -492,6 +544,32 @@
                 </div>
                 <% } %>
             </div>
+
+            <% if (viewerIsOwner) { %>
+            <div class="admin-section" style="margin-top:16px">
+                <div class="admin-section-header">
+                    <h2 class="admin-section-title">Policy Update Notification</h2>
+                    <span class="tag" style="color:var(--amber);border-color:rgba(212,164,74,.3);font-size:10px">Owner Only</span>
+                </div>
+                <div style="padding:16px;background:var(--bg-elev);border:1px solid var(--line);border-radius:6px">
+                    <div style="font-size:13px;color:var(--ink-faint);margin-bottom:14px">Send an email to all registered users notifying them that a policy has been updated.</div>
+                    <form method="POST" action="${pageContext.request.contextPath}/adminSendPolicyEmail" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+                        <div style="display:flex;flex-direction:column;gap:4px;min-width:180px">
+                            <label style="font-size:11px;color:var(--ink-faint);font-family:var(--font-mono)">Policy</label>
+                            <select name="policyType" class="form-input" style="width:180px">
+                                <option value="privacy">Privacy Policy</option>
+                                <option value="terms">Terms of Service</option>
+                            </select>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:220px">
+                            <label style="font-size:11px;color:var(--ink-faint);font-family:var(--font-mono)">Link to Policy</label>
+                            <input type="url" name="policyLink" class="form-input" placeholder="https://..." required style="width:100%">
+                        </div>
+                        <button type="submit" class="btn primary" onclick="return confirm('Send policy update email to ALL users?')">Send to All Users</button>
+                    </form>
+                </div>
+            </div>
+            <% } %>
             <% } %>
 
             <!-- ── BAN LOGS TAB ──────────────────────────────────────────── -->
@@ -905,5 +983,6 @@ function doAcadSaveUnlocks() {
     tables.forEach(function(t) { if (document.getElementById(t)) renderPaginator(t, 1); });
 })();
 </script>
+<%@ include file="_bot-picker.jsp" %>
 </body>
 </html>

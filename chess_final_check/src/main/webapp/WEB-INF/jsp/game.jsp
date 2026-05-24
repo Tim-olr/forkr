@@ -1548,8 +1548,8 @@ function renderArrows() {
         const isLight=(row+c)%2===0;
         const color=isLight?'rgba(235,97,80,0.72)':'rgba(176,41,22,0.82)';
         const rect=document.createElementNS(NS,'rect');
-        rect.setAttribute('x',x-CELL_SIZE/2); rect.setAttribute('y',y-CELL_SIZE/2);
-        rect.setAttribute('width',CELL_SIZE); rect.setAttribute('height',CELL_SIZE);
+        rect.setAttribute('x',x-SVG_CELL/2); rect.setAttribute('y',y-SVG_CELL/2);
+        rect.setAttribute('width',SVG_CELL); rect.setAttribute('height',SVG_CELL);
         rect.setAttribute('fill',color);
         svg.appendChild(rect);
     });
@@ -2180,5 +2180,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </main>
 </div>
+<%@ include file="_bot-picker.jsp" %>
 </body>
 </html>

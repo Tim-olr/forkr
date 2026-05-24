@@ -4,6 +4,7 @@ import org.apache.struts2.ActionSupport;
 import timolr.chess.account.PasswordHasher;
 import timolr.chess.account.User;
 import timolr.chess.account.UserDAO;
+import timolr.chess.account.UserRole;
 
 public class AdminSetupAction extends ActionSupport {
 
@@ -15,7 +16,7 @@ public class AdminSetupAction extends ActionSupport {
     @Override
     public String execute() {
         UserDAO dao = new UserDAO();
-        if (dao.anyAdminExists()) {
+        if (dao.anyOwnerExists()) {
             return "redirect";
         }
         if (username == null || username.isBlank()) {
@@ -37,14 +38,14 @@ public class AdminSetupAction extends ActionSupport {
         user.setUsername(username);
         user.setEmail(email);
         user.setPasswordHash(PasswordHasher.hash(password));
-        user.setAdmin(true);
+        user.setRole(UserRole.OWNER);
         dao.save(user);
         return SUCCESS;
     }
 
     public String show() {
         UserDAO dao = new UserDAO();
-        if (dao.anyAdminExists()) {
+        if (dao.anyOwnerExists()) {
             return "redirect";
         }
         return INPUT;

@@ -7,6 +7,11 @@ import java.time.LocalDateTime;
 @Table(name = "users")
 public class User {
 
+    public static final String ROLE_OWNER    = "OWNER";
+    public static final String ROLE_CO_OWNER = "CO_OWNER";
+    public static final String ROLE_ADMIN    = "ADMIN";
+    public static final String ROLE_USER     = "USER";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,6 +30,10 @@ public class User {
 
     @Column(name = "is_admin", nullable = false)
     private boolean admin = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_role", length = 20)
+    private UserRole role;
 
     @Column(name = "elo", nullable = false)
     private int elo = 200;
@@ -62,6 +71,12 @@ public class User {
     @Column(name = "unlocked_pieces", columnDefinition = "TEXT")
     private String unlockedPieces;
 
+    @Column(name = "challenge_date")
+    private java.time.LocalDate challengeDate;
+
+    @Column(name = "challenge_flags", length = 100)
+    private String challengeFlags;
+
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
@@ -82,8 +97,30 @@ public class User {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public boolean isAdmin() { return admin; }
+    public boolean isAdmin() {
+        if (role != null) return role != UserRole.USER;
+        return admin;
+    }
     public void setAdmin(boolean admin) { this.admin = admin; }
+
+    public boolean isOwner() { return role == UserRole.OWNER; }
+    public boolean isCoOwner() { return role == UserRole.CO_OWNER; }
+
+    public UserRole getRole() { return role; }
+    public void setRole(UserRole role) {
+        this.role = role;
+        this.admin = (role != null && role != UserRole.USER);
+    }
+
+    public String getRoleName() {
+        if (role == null) return "Player";
+        switch (role) {
+            case OWNER:    return "Owner";
+            case CO_OWNER: return "Co-Owner";
+            case ADMIN:    return "Admin";
+            default:       return "Player";
+        }
+    }
 
     public int getElo() { return elo; }
     public void setElo(int elo) { this.elo = elo; }
@@ -120,4 +157,10 @@ public class User {
 
     public String getUnlockedPieces() { return unlockedPieces; }
     public void setUnlockedPieces(String unlockedPieces) { this.unlockedPieces = unlockedPieces; }
+
+    public java.time.LocalDate getChallengeDate() { return challengeDate; }
+    public void setChallengeDate(java.time.LocalDate challengeDate) { this.challengeDate = challengeDate; }
+
+    public String getChallengeFlags() { return challengeFlags; }
+    public void setChallengeFlags(String challengeFlags) { this.challengeFlags = challengeFlags; }
 }

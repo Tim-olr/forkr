@@ -8,6 +8,7 @@ import org.apache.struts2.ServletActionContext;
 import timolr.chess.account.PasswordHasher;
 import timolr.chess.account.User;
 import timolr.chess.account.UserDAO;
+import timolr.chess.account.UserRole;
 import timolr.chess.army.Army;
 import timolr.chess.army.ArmyDAO;
 import timolr.chess.bot.Bot;
@@ -60,6 +61,9 @@ public class AdminAction extends ActionSupport {
     private Long toggleAdminId;
     private boolean toggleAdminValue;
 
+    private Long toggleCoOwnerId;
+    private boolean toggleCoOwnerValue;
+
     // Edit user fields
     private Long editUserId;
     private String editUsername;
@@ -97,6 +101,10 @@ public class AdminAction extends ActionSupport {
     private List<Long> botArmyIds = new ArrayList<>();
 
     private String loggedInUsername;
+
+    // Policy email blast fields
+    private String policyType;
+    private String policyLink;
 
     @Override
     public String execute() {
@@ -141,10 +149,44 @@ public class AdminAction extends ActionSupport {
         if (session == null || !Boolean.TRUE.equals(session.getAttribute("isAdmin"))) {
             return "forbidden";
         }
+        String viewerRole = (String) session.getAttribute("userRole");
+        boolean viewerIsOwner    = "OWNER".equals(viewerRole);
+        boolean viewerIsCoOwner  = "CO_OWNER".equals(viewerRole);
+        if (!viewerIsOwner && !viewerIsCoOwner) {
+            return "forbidden";
+        }
         if (toggleAdminId != null) {
             Long currentUserId = (Long) session.getAttribute("userId");
             if (!toggleAdminId.equals(currentUserId)) {
-                new UserDAO().setAdmin(toggleAdminId, toggleAdminValue);
+                UserDAO dao = new UserDAO();
+                User target = dao.findById(toggleAdminId);
+                if (target != null && !target.isOwner()) {
+                    UserRole newRole = toggleAdminValue ? UserRole.ADMIN : UserRole.USER;
+                    dao.setRole(toggleAdminId, newRole);
+                }
+            }
+        }
+        return "redirect";
+    }
+
+    public String toggleCoOwner() {
+        HttpSession session = ServletActionContext.getRequest().getSession(false);
+        if (session == null || !Boolean.TRUE.equals(session.getAttribute("isAdmin"))) {
+            return "forbidden";
+        }
+        String viewerRole = (String) session.getAttribute("userRole");
+        if (!"OWNER".equals(viewerRole)) {
+            return "forbidden";
+        }
+        if (toggleCoOwnerId != null) {
+            Long currentUserId = (Long) session.getAttribute("userId");
+            if (!toggleCoOwnerId.equals(currentUserId)) {
+                UserDAO dao = new UserDAO();
+                User target = dao.findById(toggleCoOwnerId);
+                if (target != null && !target.isOwner()) {
+                    UserRole newRole = toggleCoOwnerValue ? UserRole.CO_OWNER : UserRole.ADMIN;
+                    dao.setRole(toggleCoOwnerId, newRole);
+                }
             }
         }
         return "redirect";
@@ -183,32 +225,45 @@ public class AdminAction extends ActionSupport {
         if (session == null || !Boolean.TRUE.equals(session.getAttribute("isAdmin"))) {
             return "forbidden";
         }
-        if (banUserId != null) {
-            Long currentUserId = (Long) session.getAttribute("userId");
-            if (!banUserId.equals(currentUserId)) {
-                UserDAO dao = new UserDAO();
-                User target = dao.findById(banUserId);
-                if (target != null) {
-                    String adminName = (String) session.getAttribute("username");
-                    String reason = (banReason != null && !banReason.isBlank()) ? banReason.trim() : null;
-                    dao.setBannedWithReason(banUserId, banValue, reason);
+        if (banUserId == null) return "redirect";
 
-                    BanLog log = new BanLog();
-                    log.setTargetUserId(banUserId);
-                    log.setTargetUsername(target.getUsername());
-                    log.setAdminUsername(adminName);
-                    log.setAction(banValue ? "BAN" : "UNBAN");
-                    log.setReason(reason);
-                    new BanLogDAO().save(log);
+        Long currentUserId = (Long) session.getAttribute("userId");
+        if (banUserId.equals(currentUserId)) return "redirect";
 
-                    if (banValue) {
-                        EmailService.sendBanEmail(target.getEmail(), target.getUsername(), reason);
-                    } else {
-                        EmailService.sendUnbanEmail(target.getEmail(), target.getUsername(), reason);
-                    }
-                }
-            }
+        String viewerRole = (String) session.getAttribute("userRole");
+        boolean viewerIsOwner   = "OWNER".equals(viewerRole);
+        boolean viewerIsCoOwner = "CO_OWNER".equals(viewerRole);
+
+        UserDAO dao = new UserDAO();
+        User target = dao.findById(banUserId);
+        if (target == null) return "redirect";
+
+        // Nobody can ban the owner
+        if (target.isOwner()) return "redirect";
+
+        // Admins cannot ban other elevated users (admin, co-owner)
+        if (!viewerIsOwner && !viewerIsCoOwner) {
+            if (target.isAdmin()) return "redirect";
         }
+
+        String adminName = (String) session.getAttribute("username");
+        String reason = (banReason != null && !banReason.isBlank()) ? banReason.trim() : null;
+        dao.setBannedWithReason(banUserId, banValue, reason);
+
+        BanLog log = new BanLog();
+        log.setTargetUserId(banUserId);
+        log.setTargetUsername(target.getUsername());
+        log.setAdminUsername(adminName);
+        log.setAction(banValue ? "BAN" : "UNBAN");
+        log.setReason(reason);
+        new BanLogDAO().save(log);
+
+        if (banValue) {
+            EmailService.sendBanEmail(target.getEmail(), target.getUsername(), reason);
+        } else {
+            EmailService.sendUnbanEmail(target.getEmail(), target.getUsername(), reason);
+        }
+
         return "redirect";
     }
 
@@ -342,6 +397,35 @@ public class AdminAction extends ActionSupport {
         return sendJson("{\"ok\":true,\"kp\":" + newKp + ",\"unlocked\":\"" + unlocked.replace("\"","\\\"") + "\"}");
     }
 
+    public String sendPolicyEmail() {
+        HttpSession session = ServletActionContext.getRequest().getSession(false);
+        if (session == null || !Boolean.TRUE.equals(session.getAttribute("isAdmin"))) {
+            return "forbidden";
+        }
+        String viewerRole = (String) session.getAttribute("userRole");
+        if (!"OWNER".equals(viewerRole)) {
+            return "forbidden";
+        }
+        if (policyLink == null || policyLink.isBlank()) {
+            session.setAttribute("adminFlash", "Policy link is required.");
+            return "redirect";
+        }
+
+        List<User> users = new UserDAO().findAll();
+        String type = "terms".equals(policyType) ? "terms" : "privacy";
+        int sent = 0;
+        for (User u : users) {
+            if (u.getEmail() != null && !u.getEmail().isBlank()) {
+                EmailService.sendPolicyUpdateEmail(u.getEmail(), u.getUsername(), type, policyLink.trim());
+                sent++;
+            }
+        }
+
+        String policyName = "terms".equals(type) ? "Terms of Service" : "Privacy Policy";
+        session.setAttribute("adminFlash", "Policy update email sent to " + sent + " user(s) re: " + policyName + ".");
+        return "redirect";
+    }
+
     private String sendJson(String json) {
         jsonStream = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
         return SUCCESS;
@@ -365,6 +449,12 @@ public class AdminAction extends ActionSupport {
 
     public boolean isToggleAdminValue() { return toggleAdminValue; }
     public void setToggleAdminValue(boolean toggleAdminValue) { this.toggleAdminValue = toggleAdminValue; }
+
+    public Long getToggleCoOwnerId() { return toggleCoOwnerId; }
+    public void setToggleCoOwnerId(Long toggleCoOwnerId) { this.toggleCoOwnerId = toggleCoOwnerId; }
+
+    public boolean isToggleCoOwnerValue() { return toggleCoOwnerValue; }
+    public void setToggleCoOwnerValue(boolean toggleCoOwnerValue) { this.toggleCoOwnerValue = toggleCoOwnerValue; }
 
     public Long getEditUserId() { return editUserId; }
     public void setEditUserId(Long editUserId) { this.editUserId = editUserId; }
@@ -453,4 +543,9 @@ public class AdminAction extends ActionSupport {
     public List<PieceDefinition> getPieceDefinitions() { return pieceDefinitions; }
     public long getOpenReportsCount() { return openReportsCount; }
     public long getTotalMatchCount() { return totalMatchCount; }
+
+    public String getPolicyType() { return policyType; }
+    public void setPolicyType(String policyType) { this.policyType = policyType; }
+    public String getPolicyLink() { return policyLink; }
+    public void setPolicyLink(String policyLink) { this.policyLink = policyLink; }
 }

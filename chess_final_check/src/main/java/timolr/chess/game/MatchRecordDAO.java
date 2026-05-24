@@ -48,6 +48,37 @@ public class MatchRecordDAO {
         }
     }
 
+    public long countTodayByUserId(Long userId) {
+        java.time.LocalDateTime start = java.time.LocalDate.now().atStartOfDay();
+        java.time.LocalDateTime end = start.plusDays(1);
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Long count = session.createQuery(
+                "SELECT COUNT(m) FROM MatchRecord m WHERE (m.whiteUserId = :uid OR m.blackUserId = :uid) " +
+                "AND m.playedAt >= :start AND m.playedAt < :end", Long.class)
+                .setParameter("uid", userId)
+                .setParameter("start", start)
+                .setParameter("end", end)
+                .uniqueResult();
+            return count != null ? count : 0L;
+        }
+    }
+
+    public long countTodayWinsByUserId(Long userId) {
+        java.time.LocalDateTime start = java.time.LocalDate.now().atStartOfDay();
+        java.time.LocalDateTime end = start.plusDays(1);
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Long count = session.createQuery(
+                "SELECT COUNT(m) FROM MatchRecord m WHERE " +
+                "((m.whiteUserId = :uid AND m.result = '1-0') OR (m.blackUserId = :uid AND m.result = '0-1')) " +
+                "AND m.playedAt >= :start AND m.playedAt < :end", Long.class)
+                .setParameter("uid", userId)
+                .setParameter("start", start)
+                .setParameter("end", end)
+                .uniqueResult();
+            return count != null ? count : 0L;
+        }
+    }
+
     public void setFlagged(Long id, boolean flagged) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             session.beginTransaction();

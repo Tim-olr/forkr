@@ -100,6 +100,7 @@ public class GoogleCallbackAction extends ActionSupport {
         newSession.setAttribute("userId", user.getId());
         newSession.setAttribute("username", user.getUsername());
         newSession.setAttribute("isAdmin", user.isAdmin());
+        newSession.setAttribute("userRole", user.getRole() != null ? user.getRole().name() : "USER");
         newSession.setAttribute("elo", user.getElo());
         newSession.setAttribute("profilePicPath", user.getProfilePicPath());
 

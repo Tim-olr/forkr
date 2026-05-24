@@ -5,24 +5,23 @@
 }
 
 :root {
-    --bg-primary: #1a1f23;
-    --bg-nav: #35383d;
-    --bg-card: #35383d;
-    --bg-input: #1a1f23;
-    --board-light: #c2d3e4;
-    --board-dark: #5377a2;
-    --green: #5377a2;
-    --green-hover: #6a8db8;
-    --text: #f0f6fa;
-    --text-muted: #64707d;
-    --border: #4b5158;
-    --error: #e86161;
-    /* Surface vars used by army builder & modals */
-    --surface: #4b5158;
-    --surface-alt: #64707d;
-    --accent: #5377a2;
-    /* Board sizing — width breakpoints cap the max; height formula prevents vertical overflow.
-       140px = 56px nav + 24px×2 container padding + ~20px file-labels + 16px buffer. */
+    /* Map legacy token names to the active forkr design system */
+    --bg-primary:   var(--bg);
+    --bg-nav:       var(--bg-elev);
+    --bg-card:      var(--bg-elev);
+    --bg-input:     var(--bg);
+    --board-light:  var(--light-sq);
+    --board-dark:   var(--dark-sq);
+    --green:        var(--moss);
+    --green-hover:  #8aad70;
+    --text:         var(--ink);
+    --text-muted:   var(--ink-mute);
+    --border:       var(--line-strong);
+    --error:        var(--crimson);
+    --surface:      var(--bg-elev);
+    --surface-alt:  var(--bg-elev-2);
+    --accent:       var(--amber);
+    /* Board sizing */
     --cell: min(105px, calc((100vh - 140px) / 8));
     --piece-font: calc(var(--cell) * 0.657);
     --sprite-sz: calc(var(--cell) * 0.914);

@@ -5,11 +5,14 @@
     String _activeNav = _activeNavObj != null ? _activeNavObj.toString() : "";
     boolean _isAdmin = Boolean.TRUE.equals(session.getAttribute("isAdmin"));
     String _username = (String) session.getAttribute("username");
+    String _userRole = (String) session.getAttribute("userRole");
+    String _roleLabel = "OWNER".equals(_userRole) ? "Owner" : "CO_OWNER".equals(_userRole) ? "Co-Owner" : "Admin";
     String _avatarLetter = (_username != null && !_username.isEmpty())
         ? String.valueOf(_username.charAt(0)).toUpperCase() : "?";
+    String _sidebarPic = (String) session.getAttribute("profilePicPath");
 %>
 <nav class="sidebar">
-    <div class="sidebar-brand">
+    <a href="${pageContext.request.contextPath}/home" class="sidebar-brand" style="text-decoration:none;color:inherit">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="2" y="18" width="20" height="3" rx="1" fill="#d4a44a"/>
             <rect x="9" y="15" width="6" height="3" rx="0.5" fill="#d4a44a"/>
@@ -17,7 +20,7 @@
             <circle cx="12" cy="10" r="1.5" fill="#14110d"/>
         </svg>
         <span style="font-family:var(--font-display);font-size:18px;letter-spacing:-0.01em">Forkr</span>
-    </div>
+    </a>
 
     <div class="sidebar-group">
         <div class="sidebar-group-title">Play</div>
@@ -86,10 +89,14 @@
     <% } %>
 
     <div class="sidebar-foot">
-        <div class="avatar" style="width:28px;height:28px;font-size:12px;flex-shrink:0"><%= _avatarLetter %></div>
+        <div class="avatar" style="width:28px;height:28px;font-size:12px;flex-shrink:0;<% if (_sidebarPic != null && !_sidebarPic.isEmpty()) { %>border-radius:50%;overflow:hidden;background:none;<% } %>">
+            <% if (_sidebarPic != null && !_sidebarPic.isEmpty()) { %>
+            <img src="${pageContext.request.contextPath}/<%= _sidebarPic %>" style="width:100%;height:100%;object-fit:cover;display:block" alt="<%= _avatarLetter %>">
+            <% } else { %><%= _avatarLetter %><% } %>
+        </div>
         <div style="flex:1;min-width:0;overflow:hidden">
             <div class="user-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= _username != null ? _username : "" %></div>
-            <% if (_isAdmin) { %><div class="user-role">Admin</div><% } %>
+            <% if (_isAdmin) { %><div class="user-role"><%= _roleLabel %></div><% } %>
         </div>
         <a href="${pageContext.request.contextPath}/logout" class="icon-btn" title="Log out">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>

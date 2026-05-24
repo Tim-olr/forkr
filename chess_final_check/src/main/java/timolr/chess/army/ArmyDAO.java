@@ -127,6 +127,20 @@ public class ArmyDAO {
         }
     }
 
+    public void deleteAllByOwner(Long userId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            session.beginTransaction();
+            List<Army> armies = session.createQuery(
+                    "FROM Army WHERE owner.id = :uid", Army.class)
+                    .setParameter("uid", userId)
+                    .list();
+            for (Army army : armies) {
+                session.remove(army);
+            }
+            session.getTransaction().commit();
+        }
+    }
+
     public void setPreset(Long id, boolean preset) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             session.beginTransaction();
