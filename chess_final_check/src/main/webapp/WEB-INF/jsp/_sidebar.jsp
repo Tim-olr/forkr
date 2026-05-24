@@ -1,6 +1,5 @@
 <%-- _sidebar.jsp — app shell sidebar. Include after opening <div class="app-shell">.
      Requires session attrs: username, isAdmin. Caller sets activeNav (String). --%>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%
     Object _activeNavObj = pageContext.getAttribute("activeNav");
     String _activeNav = _activeNavObj != null ? _activeNavObj.toString() : "";

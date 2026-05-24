@@ -1,6 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="s" uri="/struts-tags" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ page import="timolr.chess.game.MatchRecord, java.util.List" %>
 <%
     pageContext.setAttribute("pageTitle", "Home");
