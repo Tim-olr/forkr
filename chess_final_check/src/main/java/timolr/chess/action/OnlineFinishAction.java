@@ -29,6 +29,20 @@ public class OnlineFinishAction extends JsonAction {
 
         UserDAO userDAO = new UserDAO();
         store.finishGame(gameId, result, userDAO);
+
+        try {
+            timolr.chess.game.MatchRecord record = new timolr.chess.game.MatchRecord();
+            record.setWhiteUserId(g.whiteUserId);
+            record.setWhiteUsername(g.whiteUsername);
+            record.setBlackUserId(g.blackUserId);
+            record.setBlackUsername(g.blackUsername);
+            record.setVariant("Standard");
+            if ("white".equals(result)) record.setResult("1-0");
+            else if ("black".equals(result)) record.setResult("0-1");
+            else record.setResult("1/2-1/2");
+            new timolr.chess.game.MatchRecordDAO().save(record);
+        } catch (Exception ignored) {}
+
         store.submitGameoverNotification(gameId, opponentColor);
 
         int newElo = color.equals("w") ? g.newWhiteElo : g.newBlackElo;

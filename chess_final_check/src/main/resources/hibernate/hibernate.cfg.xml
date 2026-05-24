@@ -32,5 +32,8 @@
 		<mapping class="timolr.chess.army.ArmyPiece" />
 		<mapping class="timolr.chess.bot.Bot" />
 		<mapping class="timolr.chess.support.SupportTicket" />
+		<mapping class="timolr.chess.game.MatchRecord" />
+		<mapping class="timolr.chess.support.PlayerReport" />
+		<mapping class="timolr.chess.support.PlatformSetting" />
 	</session-factory>
 </hibernate-configuration>
