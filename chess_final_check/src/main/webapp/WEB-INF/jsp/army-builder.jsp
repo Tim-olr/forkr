@@ -7,7 +7,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Army Builder - Forkr</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/forkr.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chess.css">
+    <style>body{background:var(--bg)!important;overflow:hidden}</style>
     <script src="${pageContext.request.contextPath}/js/piece-art.js"></script>
     <style>
     .ab-piece-btn { position: relative; }
@@ -43,32 +48,10 @@
     </style>
 </head>
 <body>
-<nav class="navbar">
-    <a href="${pageContext.request.contextPath}/home" class="navbar-logo">
-        <span class="logo-icon">&#9816;</span>
-        <span class="logo-text">Forkr</span>
-    </a>
-    <ul class="navbar-links">
-        <li><a href="${pageContext.request.contextPath}/online-game">Play Online</a></li>
-        <li><a href="${pageContext.request.contextPath}/game">vs Bots</a></li>
-        <li><a href="${pageContext.request.contextPath}/game?localPlay=true">Local Play</a></li>
-        <li><a href="${pageContext.request.contextPath}/army-builder">Army Builder</a></li>
-        <li><a href="${pageContext.request.contextPath}/academy">Academy</a></li>
-        <% if (Boolean.TRUE.equals(session.getAttribute("isAdmin"))) { %>
-        <li><a href="${pageContext.request.contextPath}/admin">Admin</a></li>
-        <li><a href="${pageContext.request.contextPath}/adminTickets">Tickets</a></li>
-        <li><a href="${pageContext.request.contextPath}/adminBanLogs">Ban Logs</a></li>
-        <% } %>
-    </ul>
-    <div class="navbar-right">
-        <a href="${pageContext.request.contextPath}/profile" class="navbar-username" style="text-decoration:none"><s:property value="loggedInUsername" /></a>
-        <a href="${pageContext.request.contextPath}/support" class="btn btn-outline" style="margin-right:6px">Support</a>
-        <a href="${pageContext.request.contextPath}/logout" class="btn btn-outline">Log Out</a>
-    </div>
-    <button class="nav-hamburger" onclick="this.closest('.navbar').classList.toggle('nav-open')" aria-label="Menu">
-        <span></span><span></span><span></span>
-    </button>
-</nav>
+<div class="app-shell">
+<% pageContext.setAttribute("activeNav", "army"); %>
+<%@ include file="_sidebar.jsp" %>
+<main class="page" style="overflow:auto;min-height:0">
 
 
 <!-- Pass loaded army data to JS -->
@@ -1300,6 +1283,8 @@ function closePieceInfo() {
         <h3>Lore</h3>
         <p id="piLore"></p>
     </div>
+</div>
+</main>
 </div>
 </body>
 </html>

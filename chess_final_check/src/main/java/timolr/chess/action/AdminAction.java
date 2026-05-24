@@ -15,6 +15,16 @@ import timolr.chess.bot.BotDAO;
 import timolr.chess.util.EmailService;
 import timolr.chess.account.BanLog;
 import timolr.chess.account.BanLogDAO;
+import timolr.chess.game.MatchRecord;
+import timolr.chess.game.MatchRecordDAO;
+import timolr.chess.support.PlayerReport;
+import timolr.chess.support.PlayerReportDAO;
+import timolr.chess.support.PlatformSetting;
+import timolr.chess.support.PlatformSettingDAO;
+import timolr.chess.support.SupportTicket;
+import timolr.chess.support.SupportTicketDAO;
+import timolr.chess.game.pieces.PieceRegistry;
+import timolr.chess.game.pieces.PieceDefinition;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -30,9 +40,19 @@ import java.util.List;
 
 public class AdminAction extends ActionSupport {
 
+    private String tab = "overview";
+
     private List<User> allUsers;
     private List<Bot> allBots;
     private List<Army> allPresetArmies;
+    private List<MatchRecord> matchRecords;
+    private List<PlayerReport> playerReports;
+    private List<SupportTicket> supportTickets;
+    private List<PlatformSetting> platformSettings;
+    private List<BanLog> banLogs;
+    private List<PieceDefinition> pieceDefinitions;
+    private long openReportsCount;
+    private long totalMatchCount;
 
     private Long togglePresetId;
     private boolean togglePresetValue;
@@ -88,6 +108,20 @@ public class AdminAction extends ActionSupport {
         allUsers = new UserDAO().findAll();
         allBots = new BotDAO().findAll();
         allPresetArmies = new ArmyDAO().findPresets();
+        pieceDefinitions = PieceRegistry.getAll();
+        try { totalMatchCount = new MatchRecordDAO().countAll(); } catch (Exception e) { totalMatchCount = 0; }
+        try { openReportsCount = new PlayerReportDAO().countByState("open"); } catch (Exception e) { openReportsCount = 0; }
+
+        if ("matches".equals(tab)) {
+            try { matchRecords = new MatchRecordDAO().findAll(100); } catch (Exception e) { matchRecords = new ArrayList<>(); }
+        } else if ("reports".equals(tab)) {
+            try { playerReports = new PlayerReportDAO().findAll(); } catch (Exception e) { playerReports = new ArrayList<>(); }
+            try { supportTickets = new SupportTicketDAO().findAll(); } catch (Exception e) { supportTickets = new ArrayList<>(); }
+        } else if ("settings".equals(tab)) {
+            try { platformSettings = new PlatformSettingDAO().findAll(); } catch (Exception e) { platformSettings = new ArrayList<>(); }
+        } else if ("banlogs".equals(tab)) {
+            try { banLogs = new BanLogDAO().findAll(); } catch (Exception e) { banLogs = new ArrayList<>(); }
+        }
         return SUCCESS;
     }
 
@@ -408,4 +442,15 @@ public class AdminAction extends ActionSupport {
     public void setAcadUnlockedPieces(String acadUnlockedPieces) { this.acadUnlockedPieces = acadUnlockedPieces; }
 
     public InputStream getJsonStream() { return jsonStream; }
+
+    public String getTab() { return tab; }
+    public void setTab(String tab) { this.tab = tab; }
+    public List<MatchRecord> getMatchRecords() { return matchRecords; }
+    public List<PlayerReport> getPlayerReports() { return playerReports; }
+    public List<SupportTicket> getSupportTickets() { return supportTickets; }
+    public List<PlatformSetting> getPlatformSettings() { return platformSettings; }
+    public List<BanLog> getBanLogs() { return banLogs; }
+    public List<PieceDefinition> getPieceDefinitions() { return pieceDefinitions; }
+    public long getOpenReportsCount() { return openReportsCount; }
+    public long getTotalMatchCount() { return totalMatchCount; }
 }

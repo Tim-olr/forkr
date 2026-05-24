@@ -288,6 +288,41 @@
 			</result>
 		</action>
 
+		<action name="submitReport" class="timolr.chess.action.PlayerReportAction">
+			<result type="stream">
+				<param name="contentType">application/json</param>
+				<param name="inputName">jsonStream</param>
+			</result>
+			<result name="login" type="stream">
+				<param name="contentType">application/json</param>
+				<param name="inputName">jsonStream</param>
+			</result>
+		</action>
+
+		<action name="adminUpdateReport" class="timolr.chess.action.AdminReportAction">
+			<result name="redirect" type="redirectAction">
+				<param name="actionName">admin</param>
+				<param name="tab">reports</param>
+			</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminSaveSetting" class="timolr.chess.action.AdminSettingsAction">
+			<result name="redirect" type="redirectAction">
+				<param name="actionName">admin</param>
+				<param name="tab">settings</param>
+			</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
+		<action name="adminFlagMatch" class="timolr.chess.action.AdminFlagMatchAction">
+			<result name="redirect" type="redirectAction">
+				<param name="actionName">admin</param>
+				<param name="tab">matches</param>
+			</result>
+			<result name="forbidden" type="redirectAction">home</result>
+		</action>
+
 	</package>
 
 </struts>

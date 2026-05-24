@@ -3,109 +3,565 @@
 <%@ page import="timolr.chess.account.User, java.util.List" %>
 <%@ page import="timolr.chess.bot.Bot" %>
 <%@ page import="timolr.chess.army.Army" %>
+<%@ page import="timolr.chess.game.MatchRecord" %>
+<%@ page import="timolr.chess.support.PlayerReport, timolr.chess.support.SupportTicket, timolr.chess.support.PlatformSetting" %>
+<%@ page import="timolr.chess.account.BanLog" %>
+<%@ page import="timolr.chess.game.pieces.PieceDefinition" %>
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Forkr</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chess.css">
-    <style>
-        .search-hidden,.pg-hidden{display:none!important}
-        .admin-paginator{display:flex;align-items:center;gap:4px;margin-top:10px;flex-wrap:wrap}
-        .pg-btn{padding:4px 10px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:6px;cursor:pointer;font-size:13px;transition:background .15s}
-        .pg-btn:hover:not(.pg-disabled):not(.pg-active){background:var(--surface-alt)}
-        .pg-btn.pg-active{background:var(--green);color:#fff;border-color:var(--green);font-weight:600}
-        .pg-btn.pg-disabled{opacity:.35;cursor:default}
-        .pg-ellipsis{padding:0 4px;color:var(--text-muted);font-size:13px}
-    </style>
-</head>
-<body>
-<%! private String esc(String s) { if(s==null)return""; return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\"","&quot;"); } %>
-
-<nav class="navbar">
-    <a href="${pageContext.request.contextPath}/home" class="navbar-logo">
-        <span class="logo-icon">&#9816;</span>
-        <span class="logo-text">Forkr</span>
-    </a>
-    <ul class="navbar-links">
-        <li><a href="${pageContext.request.contextPath}/online-game">Play Online</a></li>
-        <li><a href="${pageContext.request.contextPath}/game">vs Bots</a></li>
-        <li><a href="${pageContext.request.contextPath}/game?localPlay=true">Local Play</a></li>
-        <li><a href="${pageContext.request.contextPath}/army-builder">Army Builder</a></li>
-        <li><a href="${pageContext.request.contextPath}/admin" style="color:var(--green)">Admin</a></li>
-        <li><a href="${pageContext.request.contextPath}/adminTickets">Tickets</a></li>
-        <li><a href="${pageContext.request.contextPath}/adminBanLogs">Ban Logs</a></li>
-    </ul>
-    <div class="navbar-right">
-        <a href="${pageContext.request.contextPath}/profile" class="navbar-username" style="text-decoration:none"><s:property value="loggedInUsername" /></a>
-        <a href="${pageContext.request.contextPath}/support" class="btn btn-outline" style="margin-right:6px">Support</a>
-        <a href="${pageContext.request.contextPath}/logout" class="btn btn-outline">Log Out</a>
-    </div>
-    <button class="nav-hamburger" onclick="this.closest('.navbar').classList.toggle('nav-open')" aria-label="Menu">
-        <span></span><span></span><span></span>
-    </button>
-</nav>
-
-
 <%
-    String adminFlash = (String) session.getAttribute("adminFlash");
-    if (adminFlash != null) session.removeAttribute("adminFlash");
-%>
-<%
+    pageContext.setAttribute("pageTitle", "Admin");
+    pageContext.setAttribute("activeNav", "admin");
+
+    String curTab = (String) pageContext.findAttribute("tab");
+    if (curTab == null || curTab.isEmpty()) curTab = "overview";
+
     List<User> users = (List<User>) pageContext.findAttribute("allUsers");
     List<Bot> bots = (List<Bot>) pageContext.findAttribute("allBots");
     List<Army> presetArmies = (List<Army>) pageContext.findAttribute("allPresetArmies");
+    List<MatchRecord> matchRecords = (List<MatchRecord>) pageContext.findAttribute("matchRecords");
+    List<PlayerReport> playerReports = (List<PlayerReport>) pageContext.findAttribute("playerReports");
+    List<SupportTicket> supportTickets = (List<SupportTicket>) pageContext.findAttribute("supportTickets");
+    List<PlatformSetting> platformSettings = (List<PlatformSetting>) pageContext.findAttribute("platformSettings");
+    List<BanLog> banLogs = (List<BanLog>) pageContext.findAttribute("banLogs");
+
     Long currentUserId = (Long) session.getAttribute("userId");
     if (users == null) users = new java.util.ArrayList<>();
     if (bots == null) bots = new java.util.ArrayList<>();
     if (presetArmies == null) presetArmies = new java.util.ArrayList<>();
+    if (matchRecords == null) matchRecords = new java.util.ArrayList<>();
+    if (playerReports == null) playerReports = new java.util.ArrayList<>();
+    if (supportTickets == null) supportTickets = new java.util.ArrayList<>();
+    if (platformSettings == null) platformSettings = new java.util.ArrayList<>();
+    if (banLogs == null) banLogs = new java.util.ArrayList<>();
+
     long adminCount = users.stream().filter(User::isAdmin).count();
     long bannedCount = users.stream().filter(User::isBanned).count();
+    int openReportsCount = pageContext.findAttribute("openReportsCount") != null ? (Integer) pageContext.findAttribute("openReportsCount") : 0;
+    int totalMatchCount = pageContext.findAttribute("totalMatchCount") != null ? (Integer) pageContext.findAttribute("totalMatchCount") : 0;
     ObjectMapper jsonMapper = new ObjectMapper();
 
-    // Collect existing collection names for datalist
     java.util.Set<String> existingCollections = new java.util.LinkedHashSet<>();
     for (Bot b : bots) {
-        if (b.getCollection() != null && !b.getCollection().isBlank()) {
-            existingCollections.add(b.getCollection());
-        }
+        if (b.getCollection() != null && !b.getCollection().isBlank()) existingCollections.add(b.getCollection());
     }
-%>
 
-<!-- ── Ban Reason Modal ───────────────────────────────────────────────────── -->
+    String adminFlash = (String) session.getAttribute("adminFlash");
+    if (adminFlash != null) session.removeAttribute("adminFlash");
+%>
+<%! private String esc(String s) { if(s==null)return""; return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\"","&quot;"); } %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%@ include file="_head.jsp" %>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chess.css">
+    <style>
+        body { background: var(--bg) !important; overflow: hidden; }
+        /* bridge chess.css modal classes to forkr visual tokens */
+        .modal-overlay { position:fixed;inset:0;background:rgba(10,8,5,.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px }
+        .modal-box     { background:var(--bg-elev);border:1px solid var(--line-strong);border-radius:8px;max-width:520px;width:100%;max-height:calc(100vh - 40px);overflow:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.6);padding:24px }
+        .modal-header-row { display:flex;align-items:center;justify-content:space-between;margin-bottom:16px }
+        .modal-title   { font-family:var(--font-display);font-size:18px;font-weight:400 }
+        .modal-close-btn { background:var(--bg-elev-2);border:1px solid var(--line-strong);color:var(--ink-mute);border-radius:4px;width:28px;height:28px;display:grid;place-items:center;cursor:pointer;font-size:18px;line-height:1 }
+        .modal-close-btn:hover { color:var(--ink);border-color:var(--ink-faint) }
+        .form-group    { margin-bottom:12px }
+        .form-label    { display:block;font-size:12px;color:var(--ink-mute);margin-bottom:4px;letter-spacing:.03em }
+        .form-input    { width:100%;background:var(--bg);border:1px solid var(--line-strong);border-radius:4px;padding:8px 10px;color:var(--ink);font-size:13px;font-family:inherit }
+        .form-input:focus { border-color:var(--amber);outline:none }
+        .btn-green  { background:var(--amber)!important;color:#1a1408!important;border-color:var(--amber)!important;font-weight:500 }
+        .btn-green:hover { background:#e3b658!important;border-color:#e3b658!important }
+        .btn-danger { color:var(--crimson)!important;border-color:rgba(200,85,61,.4)!important }
+        .btn-danger:hover { background:rgba(200,85,61,.08)!important;border-color:var(--crimson)!important }
+        .btn-outline { background:var(--bg-elev)!important;border-color:var(--line-strong)!important }
+        .btn-outline:hover { background:var(--bg-elev-2)!important }
+        .admin-section { margin-bottom:28px }
+        .admin-section-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px }
+        .admin-section-title { font-family:var(--font-display);font-size:18px;font-weight:400;margin:0 }
+        .admin-section-controls { display:flex;gap:8px;align-items:center }
+        .admin-table { width:100%;border-collapse:collapse;font-size:13px }
+        .admin-table th { text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-faint);font-family:var(--font-mono);font-weight:400;white-space:nowrap }
+        .admin-table td { padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle }
+        .admin-table tbody tr:hover { background:rgba(255,255,255,.02) }
+        .admin-toggle-btn { font-size:12px;padding:4px 10px;border-radius:3px;border:1px solid var(--line-strong);background:var(--bg-elev);color:var(--ink-mute);cursor:pointer }
+        .admin-toggle-btn:hover { background:var(--bg-elev-2);color:var(--ink) }
+        .admin-toggle-btn.danger { color:var(--crimson);border-color:rgba(200,85,61,.3) }
+        .admin-toggle-btn.danger:hover { background:rgba(200,85,61,.08) }
+        .admin-empty { color:var(--ink-faint);font-size:13px;padding:24px 0;text-align:center }
+        .admin-paginator { display:flex;align-items:center;gap:4px;margin-top:10px;flex-wrap:wrap }
+        .pg-btn { padding:4px 10px;border:1px solid var(--line-strong);background:var(--bg-elev);color:var(--ink-mute);border-radius:3px;cursor:pointer;font-size:13px }
+        .pg-btn:hover:not(.pg-disabled):not(.pg-active) { background:var(--bg-elev-2) }
+        .pg-btn.pg-active { background:var(--amber);color:#1a1408;border-color:var(--amber);font-weight:600 }
+        .pg-btn.pg-disabled { opacity:.35;cursor:default }
+        .pg-ellipsis { padding:0 4px;color:var(--ink-faint);font-size:13px }
+        .search-hidden,.pg-hidden { display:none!important }
+    </style>
+</head>
+<body>
+<div class="app-shell">
+    <%@ include file="_sidebar.jsp" %>
+
+    <main class="page">
+        <div class="page-head">
+            <div class="crumb">
+                <span class="crumb-pre">Admin</span>
+                <h2>Panel</h2>
+            </div>
+            <div class="page-actions">
+                <a href="${pageContext.request.contextPath}/army-builder" class="btn sm">+ Preset Army</a>
+            </div>
+        </div>
+
+        <div class="page-body">
+            <% if (adminFlash != null) { %>
+            <div class="admin-flash"><%= esc(adminFlash) %></div>
+            <% } %>
+
+            <!-- KPI row (always visible) -->
+            <div class="kpis" style="margin-bottom:20px">
+                <div class="kpi">
+                    <div class="label">Total Users</div>
+                    <div class="val"><%= users.size() %></div>
+                </div>
+                <div class="kpi">
+                    <div class="label">Admins</div>
+                    <div class="val"><%= adminCount %></div>
+                </div>
+                <div class="kpi">
+                    <div class="label">Banned</div>
+                    <div class="val" style="color:var(--crimson)"><%= bannedCount %></div>
+                </div>
+                <div class="kpi">
+                    <div class="label">Open Reports</div>
+                    <div class="val" style="<%= openReportsCount > 0 ? "color:var(--amber)" : "" %>"><%= openReportsCount %></div>
+                </div>
+            </div>
+
+            <!-- Tab navigation -->
+            <div class="admin-tabs">
+                <a href="${pageContext.request.contextPath}/admin" class="<%= "overview".equals(curTab) ? "active" : "" %>">Overview</a>
+                <a href="${pageContext.request.contextPath}/admin?tab=users" class="<%= "users".equals(curTab) ? "active" : "" %>">Users <span style="margin-left:4px;font-size:10px;color:var(--ink-faint)"><%= users.size() %></span></a>
+                <a href="${pageContext.request.contextPath}/admin?tab=bots" class="<%= "bots".equals(curTab) ? "active" : "" %>">Bots <span style="margin-left:4px;font-size:10px;color:var(--ink-faint)"><%= bots.size() %></span></a>
+                <a href="${pageContext.request.contextPath}/admin?tab=matches" class="<%= "matches".equals(curTab) ? "active" : "" %>">Matches</a>
+                <a href="${pageContext.request.contextPath}/admin?tab=reports" class="<%= "reports".equals(curTab) ? "active" : "" %>">Reports <% if(openReportsCount>0){%><span style="margin-left:4px;font-size:10px;color:var(--amber)"><%= openReportsCount %></span><%}%></a>
+                <a href="${pageContext.request.contextPath}/admin?tab=settings" class="<%= "settings".equals(curTab) ? "active" : "" %>">Settings</a>
+                <a href="${pageContext.request.contextPath}/admin?tab=banlogs" class="<%= "banlogs".equals(curTab) ? "active" : "" %>">Ban Logs</a>
+            </div>
+
+            <!-- ── OVERVIEW TAB ──────────────────────────────────────────── -->
+            <% if ("overview".equals(curTab)) { %>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+                <div class="card" style="padding:18px">
+                    <div style="font-size:13px;font-weight:500;margin-bottom:14px">Quick Actions</div>
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                        <a href="${pageContext.request.contextPath}/admin?tab=users" class="btn ghost" style="justify-content:flex-start">Manage Users (<%= users.size() %>)</a>
+                        <a href="${pageContext.request.contextPath}/admin?tab=bots" class="btn ghost" style="justify-content:flex-start">Manage Bots (<%= bots.size() %>)</a>
+                        <a href="${pageContext.request.contextPath}/admin?tab=matches" class="btn ghost" style="justify-content:flex-start">View Match Records</a>
+                        <a href="${pageContext.request.contextPath}/admin?tab=reports" class="btn ghost" style="justify-content:flex-start">Review Reports (<%= openReportsCount %> open)</a>
+                        <a href="${pageContext.request.contextPath}/admin?tab=settings" class="btn ghost" style="justify-content:flex-start">Platform Settings</a>
+                        <a href="${pageContext.request.contextPath}/admin?tab=banlogs" class="btn ghost" style="justify-content:flex-start">Ban Logs</a>
+                        <a href="${pageContext.request.contextPath}/adminTickets" class="btn ghost" style="justify-content:flex-start">Support Tickets</a>
+                    </div>
+                </div>
+                <div class="card" style="padding:18px">
+                    <div style="font-size:13px;font-weight:500;margin-bottom:14px">Platform Status</div>
+                    <div style="display:flex;flex-direction:column;gap:10px">
+                        <div style="display:flex;justify-content:space-between;font-size:13px;align-items:center">
+                            <span style="color:var(--ink-mute)">Total Users</span>
+                            <span style="font-family:var(--font-display);font-size:18px"><%= users.size() %></span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:13px;align-items:center">
+                            <span style="color:var(--ink-mute)">Bots</span>
+                            <span style="font-family:var(--font-display);font-size:18px"><%= bots.size() %></span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:13px;align-items:center">
+                            <span style="color:var(--ink-mute)">Preset Armies</span>
+                            <span style="font-family:var(--font-display);font-size:18px"><%= presetArmies.size() %></span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:13px;align-items:center">
+                            <span style="color:var(--ink-mute)">Banned Players</span>
+                            <span style="font-family:var(--font-display);font-size:18px;color:var(--crimson)"><%= bannedCount %></span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:13px;align-items:center">
+                            <span style="color:var(--ink-mute)">Open Reports</span>
+                            <span style="font-family:var(--font-display);font-size:18px;color:var(--amber)"><%= openReportsCount %></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+
+            <!-- ── USERS TAB ─────────────────────────────────────────────── -->
+            <% if ("users".equals(curTab)) { %>
+            <div class="admin-section">
+                <div class="admin-section-header">
+                    <h2 class="admin-section-title">Users</h2>
+                    <div class="admin-section-controls">
+                        <input type="text" id="userSearch" class="form-input" style="max-width:240px" placeholder="Search users…" oninput="filterTable('userSearch','usersTable')">
+                    </div>
+                </div>
+                <% if (users.isEmpty()) { %>
+                <div class="admin-empty">No users found.</div>
+                <% } else { %>
+                <div class="table-wrap" style="overflow:auto">
+                <table class="admin-table" id="usersTable">
+                    <thead><tr><th>#</th><th>Username</th><th>Email</th><th>ELO</th><th>KP</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+                    <tbody>
+                    <% for (User u : users) {
+                        boolean isBanned = u.isBanned();
+                        boolean isAdminUser = u.isAdmin();
+                        boolean isCurrentUser = u.getId().equals(currentUserId);
+                    %>
+                    <tr>
+                        <td style="color:var(--ink-faint);font-family:var(--font-mono);font-size:11px"><%= u.getId() %></td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <div class="avatar" style="width:24px;height:24px;font-size:10px;flex-shrink:0">
+                                    <%= u.getUsername() != null && !u.getUsername().isEmpty() ? String.valueOf(u.getUsername().charAt(0)).toUpperCase() : "?" %>
+                                </div>
+                                <span style="font-weight:500"><%= esc(u.getUsername()) %></span>
+                                <% if (isCurrentUser) { %><span class="tag" style="font-size:9px">you</span><% } %>
+                            </div>
+                        </td>
+                        <td style="color:var(--ink-mute);font-size:12px"><%= esc(u.getEmail()) %></td>
+                        <td style="font-family:var(--font-mono)"><%= u.getElo() %></td>
+                        <td style="font-family:var(--font-mono)"><%= u.getKnowledgePoints() %></td>
+                        <td>
+                            <% if (isAdminUser) { %><span class="tag" style="color:var(--amber);border-color:rgba(212,164,74,.3)">Admin</span>
+                            <% } else { %><span class="tag">Player</span><% } %>
+                        </td>
+                        <td>
+                            <% if (isBanned) { %><span class="tag" style="color:var(--crimson);border-color:rgba(200,85,61,.3)">Banned</span>
+                            <% } else { %><span class="tag" style="color:var(--moss);border-color:rgba(122,148,97,.3)">Active</span><% } %>
+                        </td>
+                        <td style="color:var(--ink-faint);font-size:12px"><%= u.getCreatedAt() != null ? u.getCreatedAt().toLocalDate().toString() : "—" %></td>
+                        <td>
+                            <div style="display:flex;gap:4px;flex-wrap:wrap">
+                                <button type="button" class="admin-toggle-btn" onclick="openEditModal(<%= u.getId() %>,'<%= esc(u.getUsername()) %>','<%= esc(u.getEmail()) %>')">Edit</button>
+                                <% if (!isCurrentUser) { %>
+                                <button type="button" class="admin-toggle-btn <%= isBanned ? "" : "danger" %>"
+                                    onclick="openBanReasonModal(<%= u.getId() %>,'<%= esc(u.getUsername()) %>',<%= isBanned %>)">
+                                    <%= isBanned ? "Unban" : "Ban" %>
+                                </button>
+                                <% } %>
+                                <form method="POST" action="${pageContext.request.contextPath}/adminToggleAdmin" style="display:inline">
+                                    <input type="hidden" name="toggleAdminUserId" value="<%= u.getId() %>">
+                                    <button type="submit" class="admin-toggle-btn" <%= isCurrentUser ? "disabled" : "" %>><%= isAdminUser ? "Remove Admin" : "Make Admin" %></button>
+                                </form>
+                                <button type="button" class="admin-toggle-btn" onclick="openAcademyModal(<%= u.getId() %>,'<%= esc(u.getUsername()) %>',<%= u.getKnowledgePoints() %>,'<%= u.getUnlockedPieces() != null ? esc(u.getUnlockedPieces()) : "" %>')">Academy</button>
+                                <form method="POST" action="${pageContext.request.contextPath}/adminSendPasswordReset" style="display:inline">
+                                    <input type="hidden" name="resetUserId" value="<%= u.getId() %>">
+                                    <button type="submit" class="admin-toggle-btn">Reset PW</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <% } %>
+                    </tbody>
+                </table>
+                </div>
+                <div class="admin-paginator" id="usersTable-paginator"></div>
+                <% } %>
+            </div>
+            <% } %>
+
+            <!-- ── BOTS TAB ──────────────────────────────────────────────── -->
+            <% if ("bots".equals(curTab)) { %>
+            <div class="admin-section">
+                <div class="admin-section-header">
+                    <h2 class="admin-section-title">Bots</h2>
+                    <div class="admin-section-controls">
+                        <input type="text" id="botSearch" class="form-input" style="max-width:200px" placeholder="Search bots…" oninput="filterTable('botSearch','botsTable')">
+                        <button type="button" class="btn primary sm" onclick="openCreateBotModal()">+ New Bot</button>
+                    </div>
+                </div>
+                <% if (bots.isEmpty()) { %>
+                <div class="admin-empty">No bots found. Create one to get started.</div>
+                <% } else { %>
+                <div class="table-wrap" style="overflow:auto">
+                <table class="admin-table" id="botsTable">
+                    <thead><tr><th>Portrait</th><th>Name</th><th>ELO</th><th>Collection</th><th>Armies</th><th>Actions</th></tr></thead>
+                    <tbody>
+                    <% for (Bot bot : bots) { %>
+                    <tr>
+                        <td style="width:48px">
+                            <% if (bot.getImagePath() != null) { %>
+                            <img src="${pageContext.request.contextPath}/<%= esc(bot.getImagePath()) %>" style="width:40px;height:40px;border-radius:6px;object-fit:cover" alt="">
+                            <% } else { %>
+                            <div style="width:40px;height:40px;border-radius:6px;background:var(--bg-elev-2);display:flex;align-items:center;justify-content:center;font-size:20px">♟</div>
+                            <% } %>
+                        </td>
+                        <td style="font-weight:500"><%= esc(bot.getName()) %></td>
+                        <td style="font-family:var(--font-mono)"><%= bot.getElo() %></td>
+                        <td style="color:var(--ink-mute)"><%= bot.getCollection() != null && !bot.getCollection().isBlank() ? esc(bot.getCollection()) : "—" %></td>
+                        <td style="font-family:var(--font-mono)"><%= bot.getArmies().size() %></td>
+                        <td>
+                            <div style="display:flex;gap:4px">
+                                <button type="button" class="admin-toggle-btn" onclick="openEditBotModal(<%= bot.getId() %>)">Edit</button>
+                                <form method="POST" action="${pageContext.request.contextPath}/adminDeleteBot" style="display:inline"
+                                    onsubmit="return confirm('Delete bot \'<%= esc(bot.getName()) %>\'?')">
+                                    <input type="hidden" name="botId" value="<%= bot.getId() %>">
+                                    <button type="submit" class="admin-toggle-btn danger">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <% } %>
+                    </tbody>
+                </table>
+                </div>
+                <div class="admin-paginator" id="botsTable-paginator"></div>
+                <% } %>
+            </div>
+            <% } %>
+
+            <!-- ── MATCHES TAB ───────────────────────────────────────────── -->
+            <% if ("matches".equals(curTab)) { %>
+            <div class="admin-section">
+                <div class="admin-section-header">
+                    <h2 class="admin-section-title">Match Records</h2>
+                    <div class="admin-section-controls">
+                        <input type="text" id="matchSearch" class="form-input" style="max-width:220px" placeholder="Search…" oninput="filterTable('matchSearch','matchesTable')">
+                    </div>
+                </div>
+                <% if (matchRecords.isEmpty()) { %>
+                <div class="admin-empty">No match records yet.</div>
+                <% } else { %>
+                <div class="table-wrap" style="overflow:auto">
+                <table class="admin-table" id="matchesTable">
+                    <thead><tr><th>#</th><th>White</th><th>Black</th><th>Result</th><th>Variant</th><th>Duration</th><th>Moves</th><th>Date</th><th>Flag</th></tr></thead>
+                    <tbody>
+                    <% for (MatchRecord mr : matchRecords) { %>
+                    <tr>
+                        <td style="font-family:var(--font-mono);font-size:11px;color:var(--ink-faint)"><%= mr.getId() %></td>
+                        <td><%= esc(mr.getWhiteUsername() != null ? mr.getWhiteUsername() : "—") %></td>
+                        <td><%= esc(mr.getBlackUsername() != null ? mr.getBlackUsername() : "—") %></td>
+                        <td style="font-family:var(--font-mono);font-weight:500">
+                            <% String r = mr.getResult(); if("1-0".equals(r)){%><span style="color:var(--moss)"><%}else if("0-1".equals(r)){%><span style="color:var(--crimson)"><%}else{%><span style="color:var(--ink-faint)"><%}%><%= esc(r) %></span>
+                        </td>
+                        <td style="color:var(--ink-mute)"><%= esc(mr.getVariant() != null ? mr.getVariant() : "—") %></td>
+                        <td style="font-family:var(--font-mono);font-size:12px"><%= mr.getFormattedDuration() %></td>
+                        <td style="font-family:var(--font-mono)"><%= mr.getMoveCount() %></td>
+                        <td style="color:var(--ink-faint);font-size:12px"><%= mr.getPlayedAt() != null ? mr.getPlayedAt().toLocalDate().toString() : "—" %></td>
+                        <td>
+                            <form method="POST" action="${pageContext.request.contextPath}/adminFlagMatch" style="display:inline">
+                                <input type="hidden" name="matchId" value="<%= mr.getId() %>">
+                                <input type="hidden" name="flagged" value="<%= !mr.isFlagged() %>">
+                                <button type="submit" class="admin-toggle-btn <%= mr.isFlagged() ? "danger" : "" %>">
+                                    <%= mr.isFlagged() ? "⚑ Flagged" : "Flag" %>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    <% } %>
+                    </tbody>
+                </table>
+                </div>
+                <div class="admin-paginator" id="matchesTable-paginator"></div>
+                <% } %>
+            </div>
+            <% } %>
+
+            <!-- ── REPORTS TAB ───────────────────────────────────────────── -->
+            <% if ("reports".equals(curTab)) { %>
+            <div style="display:flex;flex-direction:column;gap:24px">
+                <!-- Player Reports -->
+                <div class="admin-section">
+                    <div class="admin-section-header">
+                        <h2 class="admin-section-title">Player Reports</h2>
+                    </div>
+                    <% if (playerReports.isEmpty()) { %>
+                    <div class="admin-empty">No player reports.</div>
+                    <% } else { %>
+                    <div class="table-wrap" style="overflow:auto">
+                    <table class="admin-table">
+                        <thead><tr><th>#</th><th>Reporter</th><th>Target</th><th>Reason</th><th>State</th><th>Date</th><th>Actions</th></tr></thead>
+                        <tbody>
+                        <% for (PlayerReport pr : playerReports) { %>
+                        <tr>
+                            <td style="font-family:var(--font-mono);font-size:11px;color:var(--ink-faint)"><%= pr.getId() %></td>
+                            <td><%= esc(pr.getReporterUsername() != null ? pr.getReporterUsername() : "—") %></td>
+                            <td style="font-weight:500"><%= esc(pr.getTargetUsername() != null ? pr.getTargetUsername() : "—") %></td>
+                            <td><%= esc(pr.getReason() != null ? pr.getReason() : "—") %></td>
+                            <td>
+                                <% String state = pr.getState() != null ? pr.getState() : "open"; %>
+                                <span class="tag" style="<%= "resolved".equals(state) ? "color:var(--moss);border-color:rgba(122,148,97,.3)" : "open".equals(state) ? "color:var(--amber);border-color:rgba(212,164,74,.3)" : "" %>"><%= state %></span>
+                            </td>
+                            <td style="font-size:12px;color:var(--ink-faint)"><%= pr.getCreatedAt() != null ? pr.getCreatedAt().toLocalDate().toString() : "—" %></td>
+                            <td>
+                                <div style="display:flex;gap:4px;flex-wrap:wrap">
+                                    <% if (!"review".equals(pr.getState())) { %>
+                                    <form method="POST" action="${pageContext.request.contextPath}/adminUpdateReport" style="display:inline">
+                                        <input type="hidden" name="reportId" value="<%= pr.getId() %>">
+                                        <input type="hidden" name="state" value="review">
+                                        <button type="submit" class="admin-toggle-btn">Review</button>
+                                    </form>
+                                    <% } %>
+                                    <% if (!"resolved".equals(pr.getState())) { %>
+                                    <form method="POST" action="${pageContext.request.contextPath}/adminUpdateReport" style="display:inline">
+                                        <input type="hidden" name="reportId" value="<%= pr.getId() %>">
+                                        <input type="hidden" name="state" value="resolved">
+                                        <button type="submit" class="admin-toggle-btn">Resolve</button>
+                                    </form>
+                                    <% } %>
+                                    <% if (!"open".equals(pr.getState())) { %>
+                                    <form method="POST" action="${pageContext.request.contextPath}/adminUpdateReport" style="display:inline">
+                                        <input type="hidden" name="reportId" value="<%= pr.getId() %>">
+                                        <input type="hidden" name="state" value="open">
+                                        <button type="submit" class="admin-toggle-btn">Reopen</button>
+                                    </form>
+                                    <% } %>
+                                </div>
+                            </td>
+                        </tr>
+                        <% } %>
+                        </tbody>
+                    </table>
+                    </div>
+                    <% } %>
+                </div>
+
+                <!-- Support Tickets -->
+                <div class="admin-section">
+                    <div class="admin-section-header">
+                        <h2 class="admin-section-title">Support Tickets</h2>
+                        <a href="${pageContext.request.contextPath}/adminTickets" class="btn sm">Full View →</a>
+                    </div>
+                    <% if (supportTickets.isEmpty()) { %>
+                    <div class="admin-empty">No support tickets.</div>
+                    <% } else { %>
+                    <div class="table-wrap" style="overflow:auto">
+                    <table class="admin-table">
+                        <thead><tr><th>#</th><th>Subject</th><th>From</th><th>Status</th><th>Claimed By</th><th>Date</th></tr></thead>
+                        <tbody>
+                        <% for (SupportTicket st : supportTickets) { %>
+                        <tr>
+                            <td style="font-family:var(--font-mono);font-size:11px;color:var(--ink-faint)"><%= st.getId() %></td>
+                            <td style="font-weight:500;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= esc(st.getTitle() != null ? st.getTitle() : "—") %></td>
+                            <td style="color:var(--ink-mute);font-size:12px"><%= esc(st.getUserEmail() != null ? st.getUserEmail() : "—") %></td>
+                            <td>
+                                <% String ts = st.getStatus() != null ? st.getStatus() : "OPEN"; %>
+                                <span class="tag" style="<%= "CLOSED".equals(ts) ? "color:var(--ink-faint)" : "CLAIMED".equals(ts) ? "color:var(--amber);border-color:rgba(212,164,74,.3)" : "color:var(--moss);border-color:rgba(122,148,97,.3)" %>"><%= ts %></span>
+                            </td>
+                            <td style="color:var(--ink-mute);font-size:12px"><%= st.getClaimedBy() != null ? esc(st.getClaimedBy().getUsername()) : "—" %></td>
+                            <td style="font-size:12px;color:var(--ink-faint)"><%= st.getCreatedAt() != null ? st.getCreatedAt().toLocalDate().toString() : "—" %></td>
+                        </tr>
+                        <% } %>
+                        </tbody>
+                    </table>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+            <% } %>
+
+            <!-- ── SETTINGS TAB ──────────────────────────────────────────── -->
+            <% if ("settings".equals(curTab)) { %>
+            <div class="admin-section">
+                <div class="admin-section-header">
+                    <h2 class="admin-section-title">Platform Settings</h2>
+                </div>
+                <% if (platformSettings.isEmpty()) { %>
+                <div class="admin-empty">No platform settings loaded.</div>
+                <% } else { %>
+                <div style="display:flex;flex-direction:column;gap:0">
+                <% for (PlatformSetting ps : platformSettings) {
+                    boolean isToggle = "true".equalsIgnoreCase(ps.getValue()) || "false".equalsIgnoreCase(ps.getValue());
+                %>
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 16px;border:1px solid var(--line);border-top:0;background:var(--bg-elev);<% if(platformSettings.indexOf(ps)==0){%>border-top:1px solid var(--line);border-radius:6px 6px 0 0;<%}if(platformSettings.indexOf(ps)==platformSettings.size()-1){%>border-radius:0 0 6px 6px;<%}%>">
+                    <div style="flex:1;min-width:0">
+                        <div style="font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--ink)"><%= esc(ps.getKey()) %></div>
+                        <div style="font-size:12px;color:var(--ink-faint);margin-top:2px"><%= esc(ps.getDescription() != null ? ps.getDescription() : "") %></div>
+                    </div>
+                    <% if (isToggle) { %>
+                    <form method="POST" action="${pageContext.request.contextPath}/adminSaveSetting" style="display:flex;align-items:center;gap:8px">
+                        <input type="hidden" name="settingKey" value="<%= esc(ps.getKey()) %>">
+                        <input type="hidden" name="settingValue" value="<%= ps.isEnabled() ? "false" : "true" %>">
+                        <span style="font-family:var(--font-mono);font-size:11px;color:var(--ink-faint)"><%= ps.isEnabled() ? "ON" : "OFF" %></span>
+                        <button type="submit" class="toggle-switch <%= ps.isEnabled() ? "on" : "" %>">
+                            <div class="toggle-thumb"></div>
+                        </button>
+                    </form>
+                    <% } else { %>
+                    <form method="POST" action="${pageContext.request.contextPath}/adminSaveSetting" style="display:flex;align-items:center;gap:8px">
+                        <input type="hidden" name="settingKey" value="<%= esc(ps.getKey()) %>">
+                        <input type="text" name="settingValue" value="<%= esc(ps.getValue()) %>" class="form-input" style="width:140px">
+                        <button type="submit" class="btn sm">Save</button>
+                    </form>
+                    <% } %>
+                </div>
+                <% } %>
+                </div>
+                <% } %>
+            </div>
+            <% } %>
+
+            <!-- ── BAN LOGS TAB ──────────────────────────────────────────── -->
+            <% if ("banlogs".equals(curTab)) { %>
+            <div class="admin-section">
+                <div class="admin-section-header">
+                    <h2 class="admin-section-title">Ban Logs</h2>
+                </div>
+                <% if (banLogs.isEmpty()) { %>
+                <div class="admin-empty">No ban log entries.</div>
+                <% } else { %>
+                <div class="table-wrap" style="overflow:auto">
+                <table class="admin-table">
+                    <thead><tr><th>#</th><th>Player</th><th>Action</th><th>Reason</th><th>By Admin</th><th>Date</th></tr></thead>
+                    <tbody>
+                    <% for (BanLog bl : banLogs) { %>
+                    <tr>
+                        <td style="font-family:var(--font-mono);font-size:11px;color:var(--ink-faint)"><%= bl.getId() %></td>
+                        <td style="font-weight:500"><%= esc(bl.getTargetUsername() != null ? bl.getTargetUsername() : "—") %></td>
+                        <td>
+                            <span class="tag" style="<%= "BAN".equals(bl.getAction()) ? "color:var(--crimson);border-color:rgba(200,85,61,.3)" : "color:var(--moss);border-color:rgba(122,148,97,.3)" %>">
+                                <%= "BAN".equals(bl.getAction()) ? "Banned" : "Unbanned" %>
+                            </span>
+                        </td>
+                        <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-mute)"><%= esc(bl.getReason() != null ? bl.getReason() : "—") %></td>
+                        <td style="color:var(--ink-mute)"><%= esc(bl.getAdminUsername() != null ? bl.getAdminUsername() : "—") %></td>
+                        <td style="font-size:12px;color:var(--ink-faint)"><%= bl.getCreatedAt() != null ? bl.getCreatedAt().toLocalDate().toString() : "—" %></td>
+                    </tr>
+                    <% } %>
+                    </tbody>
+                </table>
+                </div>
+                <% } %>
+            </div>
+            <% } %>
+        </div>
+    </main>
+</div>
+
+<!-- ── Modals ─────────────────────────────────────────────────────────────── -->
 <div class="modal-overlay" id="banReasonModal" style="display:none">
     <div class="modal-box" style="max-width:440px">
         <div class="modal-header-row">
-            <div class="modal-title" style="margin-bottom:0" id="banReasonTitle">Ban Player</div>
+            <div class="modal-title" id="banReasonTitle">Ban Player</div>
             <button class="modal-close-btn" onclick="closeBanReasonModal()">&times;</button>
         </div>
         <form method="POST" action="${pageContext.request.contextPath}/adminBanUser" id="banReasonForm">
             <input type="hidden" name="banUserId" id="banReasonUserId">
             <input type="hidden" name="banValue" id="banReasonValue">
-            <div class="form-group" style="margin-top:16px">
-                <label class="form-label" id="banReasonLabel">Ban Reason <span style="color:var(--text-muted);font-weight:400">(shown to the player)</span></label>
+            <div class="form-group" style="margin-top:8px">
+                <label class="form-label" id="banReasonLabel">Ban Reason (shown to the player)</label>
                 <textarea name="banReason" id="banReasonText" class="form-input" rows="3" maxlength="500" placeholder="Enter a reason..." style="resize:vertical"></textarea>
             </div>
             <div style="display:flex;gap:8px;margin-top:4px">
-                <button type="submit" class="btn btn-danger" style="flex:1" id="banReasonSubmitBtn">Ban Player</button>
-                <button type="button" class="btn btn-outline" onclick="closeBanReasonModal()" style="flex:1">Cancel</button>
+                <button type="submit" class="btn danger" style="flex:1" id="banReasonSubmitBtn">Ban Player</button>
+                <button type="button" class="btn" onclick="closeBanReasonModal()" style="flex:1">Cancel</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- ── Edit User Modal ─────────────────────────────────────────────────────── -->
 <div class="modal-overlay" id="editUserModal" style="display:none">
     <div class="modal-box" style="max-width:420px">
         <div class="modal-header-row">
-            <div class="modal-title" style="margin-bottom:0">Edit User</div>
+            <div class="modal-title">Edit User</div>
             <button class="modal-close-btn" onclick="closeEditModal()">&times;</button>
         </div>
         <form method="POST" action="${pageContext.request.contextPath}/adminEditUser" id="editUserForm">
             <input type="hidden" name="editUserId" id="editUserId">
-            <div class="form-group" style="margin-top:16px">
+            <div class="form-group" style="margin-top:8px">
                 <label class="form-label">Username</label>
                 <input type="text" name="editUsername" id="editUsername" class="form-input" maxlength="50" placeholder="Leave blank to keep unchanged">
             </div>
@@ -118,22 +574,21 @@
                 <input type="password" name="editPassword" id="editPassword" class="form-input" placeholder="Leave blank to keep unchanged">
             </div>
             <div style="display:flex;gap:8px;margin-top:4px">
-                <button type="submit" class="btn btn-green" style="flex:1">Save Changes</button>
-                <button type="button" class="btn btn-outline" onclick="closeEditModal()" style="flex:1">Cancel</button>
+                <button type="submit" class="btn primary" style="flex:1">Save Changes</button>
+                <button type="button" class="btn" onclick="closeEditModal()" style="flex:1">Cancel</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- ── Create Bot Modal ────────────────────────────────────────────────────── -->
 <div class="modal-overlay" id="createBotModal" style="display:none">
     <div class="modal-box" style="max-width:420px">
         <div class="modal-header-row">
-            <div class="modal-title" style="margin-bottom:0">New Bot</div>
+            <div class="modal-title">New Bot</div>
             <button class="modal-close-btn" onclick="closeCreateBotModal()">&times;</button>
         </div>
         <form method="POST" action="${pageContext.request.contextPath}/adminCreateBot">
-            <div class="form-group" style="margin-top:16px">
+            <div class="form-group" style="margin-top:8px">
                 <label class="form-label">Name</label>
                 <input type="text" name="botName" class="form-input" required maxlength="100" placeholder="Bot name">
             </div>
@@ -146,47 +601,37 @@
                 <input type="text" name="botCollection" class="form-input" list="collectionList" maxlength="100" placeholder="e.g. Beginner, Intermediate">
             </div>
             <div style="display:flex;gap:8px;margin-top:4px">
-                <button type="submit" class="btn btn-green" style="flex:1">Create Bot</button>
-                <button type="button" class="btn btn-outline" onclick="closeCreateBotModal()" style="flex:1">Cancel</button>
+                <button type="submit" class="btn primary" style="flex:1">Create Bot</button>
+                <button type="button" class="btn" onclick="closeCreateBotModal()" style="flex:1">Cancel</button>
             </div>
         </form>
     </div>
 </div>
-
-<!-- datalist for collection autocomplete -->
 <datalist id="collectionList">
-    <% for (String col : existingCollections) { %>
-    <option value="<%= esc(col) %>">
-    <% } %>
+    <% for (String col : existingCollections) { %><option value="<%= esc(col) %>"><% } %>
 </datalist>
 
-<!-- ── Edit Bot Modal ─────────────────────────────────────────────────────── -->
 <div class="modal-overlay" id="editBotModal" style="display:none">
     <div class="modal-box" style="max-width:580px;max-height:88vh;overflow-y:auto">
-        <div class="modal-header-row" style="position:sticky;top:0;background:var(--surface);z-index:1;padding-bottom:8px">
-            <div class="modal-title" style="margin-bottom:0">Edit Bot</div>
+        <div class="modal-header-row" style="position:sticky;top:0;background:var(--bg-elev);z-index:1;padding-bottom:8px">
+            <div class="modal-title">Edit Bot</div>
             <button class="modal-close-btn" onclick="closeEditBotModal()">&times;</button>
         </div>
-
-        <!-- Image upload (separate multipart form) -->
         <div id="botImageSection" style="display:flex;align-items:center;gap:16px;margin:12px 0 16px">
-            <div id="botCurrentImage" style="width:72px;height:72px;border-radius:8px;background:var(--surface-alt);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;border:1px solid var(--border)">
-                <span style="font-size:32px">&#9816;</span>
+            <div id="botCurrentImage" style="width:72px;height:72px;border-radius:8px;background:var(--bg-elev-2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;border:1px solid var(--line)">
+                <span style="font-size:32px">♟</span>
             </div>
             <form method="POST" action="${pageContext.request.contextPath}/adminUploadBotImage" enctype="multipart/form-data" style="flex:1">
                 <input type="hidden" name="botId" id="uploadBotId">
                 <label class="form-label" style="margin-bottom:4px;display:block">Bot Portrait (PNG/JPG)</label>
                 <div style="display:flex;gap:6px">
                     <input type="file" name="botImage" accept="image/*" class="form-input" style="flex:1;padding:5px">
-                    <button type="submit" class="btn btn-outline">Upload</button>
+                    <button type="submit" class="btn sm">Upload</button>
                 </div>
             </form>
         </div>
-
-        <!-- Main edit form -->
         <form method="POST" action="${pageContext.request.contextPath}/adminSaveBot">
             <input type="hidden" name="botId" id="editBotId">
-
             <div style="display:grid;grid-template-columns:1fr 120px;gap:10px">
                 <div class="form-group" style="margin-bottom:0">
                     <label class="form-label">Name</label>
@@ -197,321 +642,83 @@
                     <input type="number" name="botElo" id="editBotElo" class="form-input" min="0" max="9999">
                 </div>
             </div>
-
             <div class="form-group" style="margin-top:10px">
                 <label class="form-label">Collection</label>
-                <input type="text" name="botCollection" id="editBotCollection" class="form-input" list="collectionList" maxlength="100" placeholder="e.g. Beginner, Intermediate">
+                <input type="text" name="botCollection" id="editBotCollection" class="form-input" list="collectionList" maxlength="100">
             </div>
-
-            <hr style="border:none;border-top:1px solid var(--border);margin:14px 0 10px">
-            <div style="color:var(--text-muted);font-size:12px;margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">General Voicelines</div>
-
-            <div class="form-group">
-                <label class="form-label">Periodic <span style="color:var(--text-muted);font-weight:400">(shown randomly during play)</span></label>
-                <div id="editBotVoicelines" data-field="botVoicelines"></div>
-                <button type="button" class="btn btn-outline" onclick="addLine('editBotVoicelines')" style="margin-top:4px;font-size:13px">+ Add Line</button>
+            <%-- Voicelines / script lines --%>
+            <% String[][] lineGroups = {
+                {"Idle Lines","editBotVoicelines","voicelines"},
+                {"G0 Take Lines","editBotG0Lines","g0capture"},
+                {"G1 Take Lines","editBotG1Lines","g1capture"},
+                {"G2 Take Lines","editBotG2Lines","g2capture"},
+                {"G0 Capture Lines","editBotG0TakeLines","g0take"},
+                {"G1 Capture Lines","editBotG1TakeLines","g1take"},
+                {"G2 Capture Lines","editBotG2TakeLines","g2take"},
+                {"Win Lines","editBotWinLines","winLines"},
+                {"Lose Lines","editBotLoseLines","loseLines"}
+            }; %>
+            <% for (String[] grp : lineGroups) { %>
+            <div style="margin-top:12px">
+                <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);font-weight:500;margin-bottom:6px"><%= grp[0] %></div>
+                <div id="<%= grp[1] %>" data-field="<%= grp[2] %>"></div>
+                <button type="button" class="btn sm ghost" onclick="addLine('<%= grp[1] %>')">+ Add Line</button>
             </div>
-
-            <hr style="border:none;border-top:1px solid var(--border);margin:14px 0 10px">
-            <div style="color:var(--text-muted);font-size:12px;margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">When opponent takes a bot piece</div>
-
-            <div class="form-group">
-                <label class="form-label">G0 piece captured <span style="color:var(--text-muted);font-weight:400">(Pawn-grade)</span></label>
-                <div id="editBotG0Lines" data-field="botG0Lines"></div>
-                <button type="button" class="btn btn-outline" onclick="addLine('editBotG0Lines')" style="margin-top:4px;font-size:13px">+ Add Line</button>
-            </div>
-            <div class="form-group">
-                <label class="form-label">G1 piece captured <span style="color:var(--text-muted);font-weight:400">(Knight/Rook/Bishop-grade)</span></label>
-                <div id="editBotG1Lines" data-field="botG1Lines"></div>
-                <button type="button" class="btn btn-outline" onclick="addLine('editBotG1Lines')" style="margin-top:4px;font-size:13px">+ Add Line</button>
-            </div>
-            <div class="form-group">
-                <label class="form-label">G2 piece captured <span style="color:var(--text-muted);font-weight:400">(Queen-grade)</span></label>
-                <div id="editBotG2Lines" data-field="botG2Lines"></div>
-                <button type="button" class="btn btn-outline" onclick="addLine('editBotG2Lines')" style="margin-top:4px;font-size:13px">+ Add Line</button>
-            </div>
-
-            <hr style="border:none;border-top:1px solid var(--border);margin:14px 0 10px">
-            <div style="color:var(--text-muted);font-size:12px;margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">When bot takes an opponent piece</div>
-
-            <div class="form-group">
-                <label class="form-label">Takes G0 piece <span style="color:var(--text-muted);font-weight:400">(Pawn-grade)</span></label>
-                <div id="editBotG0TakeLines" data-field="botG0TakeLines"></div>
-                <button type="button" class="btn btn-outline" onclick="addLine('editBotG0TakeLines')" style="margin-top:4px;font-size:13px">+ Add Line</button>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Takes G1 piece <span style="color:var(--text-muted);font-weight:400">(Knight/Rook/Bishop-grade)</span></label>
-                <div id="editBotG1TakeLines" data-field="botG1TakeLines"></div>
-                <button type="button" class="btn btn-outline" onclick="addLine('editBotG1TakeLines')" style="margin-top:4px;font-size:13px">+ Add Line</button>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Takes G2 piece <span style="color:var(--text-muted);font-weight:400">(Queen-grade)</span></label>
-                <div id="editBotG2TakeLines" data-field="botG2TakeLines"></div>
-                <button type="button" class="btn btn-outline" onclick="addLine('editBotG2TakeLines')" style="margin-top:4px;font-size:13px">+ Add Line</button>
-            </div>
-
-            <hr style="border:none;border-top:1px solid var(--border);margin:14px 0 10px">
-            <div style="color:var(--text-muted);font-size:12px;margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Game Result</div>
-
-            <div class="form-group">
-                <label class="form-label">Win lines <span style="color:var(--text-muted);font-weight:400">(bot wins by checkmate)</span></label>
-                <div id="editBotWinLines" data-field="botWinLines"></div>
-                <button type="button" class="btn btn-outline" onclick="addLine('editBotWinLines')" style="margin-top:4px;font-size:13px">+ Add Line</button>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Lose lines <span style="color:var(--text-muted);font-weight:400">(opponent wins by checkmate)</span></label>
-                <div id="editBotLoseLines" data-field="botLoseLines"></div>
-                <button type="button" class="btn btn-outline" onclick="addLine('editBotLoseLines')" style="margin-top:4px;font-size:13px">+ Add Line</button>
-            </div>
-
-            <hr style="border:none;border-top:1px solid var(--border);margin:14px 0 10px">
-            <div style="color:var(--text-muted);font-size:12px;margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Available Armies</div>
-
+            <% } %>
+            <hr style="border:none;border-top:1px solid var(--line);margin:14px 0 10px">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);font-weight:500;margin-bottom:8px">Available Armies</div>
             <div class="form-group">
                 <% if (presetArmies.isEmpty()) { %>
-                <div style="color:var(--text-muted);font-size:13px">No preset armies yet.</div>
+                <div style="color:var(--ink-faint);font-size:13px">No preset armies yet.</div>
                 <% } else { %>
                 <div style="display:flex;flex-direction:column;gap:6px">
                     <% for (Army army : presetArmies) { %>
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
                         <input type="checkbox" name="botArmyIds" value="<%= army.getId() %>" class="bot-army-checkbox">
-                        <span><%= esc(army.getName()) %> <span style="color:var(--text-muted);font-size:12px">(<%= esc(army.getTeam()) %>)</span></span>
+                        <span><%= esc(army.getName()) %> <span style="color:var(--ink-faint);font-size:11px">(<%= esc(army.getTeam()) %>)</span></span>
                     </label>
                     <% } %>
                 </div>
                 <% } %>
             </div>
-
-            <div style="display:flex;gap:8px;margin-top:12px;position:sticky;bottom:0;background:var(--surface);padding-top:8px">
-                <button type="submit" class="btn btn-green" style="flex:1">Save Changes</button>
-                <button type="button" class="btn btn-danger" onclick="closeEditBotModal()" style="flex:1">Cancel</button>
+            <div style="display:flex;gap:8px;margin-top:12px;position:sticky;bottom:0;background:var(--bg-elev);padding-top:8px">
+                <button type="submit" class="btn primary" style="flex:1">Save Changes</button>
+                <button type="button" class="btn danger" onclick="closeEditBotModal()" style="flex:1">Cancel</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- ── Academy Management Modal ───────────────────────────────────────────── -->
 <div class="modal-overlay" id="academyModal" style="display:none">
     <div class="modal-box" style="max-width:500px;max-height:88vh;overflow-y:auto">
         <div class="modal-header-row">
-            <div class="modal-title" style="margin-bottom:0">Academy — <span id="acadModalUser"></span></div>
+            <div class="modal-title">Academy — <span id="acadModalUser"></span></div>
             <button class="modal-close-btn" onclick="closeAcademyModal()">&times;</button>
         </div>
-
-        <!-- KP section -->
-        <div style="margin-top:18px">
-            <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:8px">Knowledge Points</div>
+        <div style="margin-top:16px">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);margin-bottom:8px">Knowledge Points</div>
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-                <span style="font-size:15px">Current KP:</span>
-                <span id="acadCurrentKP" style="font-size:18px;font-weight:700;color:#d4af37"></span>
+                <span style="font-size:14px;color:var(--ink-mute)">Current KP:</span>
+                <span id="acadCurrentKP" style="font-size:20px;font-family:var(--font-display);color:var(--amber)"></span>
             </div>
             <div style="display:flex;gap:8px;align-items:center">
                 <input type="number" id="acadKpAmount" class="form-input" value="10" min="1" max="9999" style="width:100px">
-                <button class="btn btn-green" onclick="doAcadKP(1)" style="flex:1">+ Give KP</button>
-                <button class="btn btn-danger" onclick="doAcadKP(-1)" style="flex:1">− Remove KP</button>
+                <button class="btn primary sm" onclick="doAcadKP(1)" style="flex:1">+ Give KP</button>
+                <button class="btn danger sm" onclick="doAcadKP(-1)" style="flex:1">− Remove KP</button>
             </div>
         </div>
-
-        <hr style="border:none;border-top:1px solid var(--border);margin:18px 0 12px">
-
-        <!-- Unlock section -->
+        <hr style="border:none;border-top:1px solid var(--line);margin:16px 0 12px">
         <div>
-            <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:10px">Piece Unlocks</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">Base pieces (Pawn, Knight, Rook, Bishop, Queen, King) are always available.</div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);margin-bottom:10px">Piece Unlocks</div>
             <div id="acadUnlockList" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:14px"></div>
-            <button class="btn btn-green" onclick="doAcadSaveUnlocks()" style="width:100%">Save Piece Unlocks</button>
+            <button class="btn primary sm" onclick="doAcadSaveUnlocks()" style="width:100%">Save Piece Unlocks</button>
         </div>
-
-        <div id="acadModalMsg" style="margin-top:10px;font-size:13px;text-align:center;min-height:20px;color:var(--green)"></div>
-    </div>
-</div>
-
-<% if (adminFlash != null) { %>
-<div style="background:var(--surface-alt);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:6px;padding:12px 18px;margin:16px auto;max-width:1100px;font-size:14px;word-break:break-all">
-    <%= esc(adminFlash) %>
-</div>
-<% } %>
-
-<div class="admin-page">
-    <div class="admin-header">
-        <div>
-            <h1 class="admin-title">&#9876; Admin Panel</h1>
-        </div>
-        <a href="${pageContext.request.contextPath}/army-builder" class="btn btn-green">+ New Preset Army</a>
-    </div>
-
-    <!-- Stats -->
-    <div class="admin-stats">
-        <div class="admin-stat-card">
-            <div class="admin-stat-num"><%= users.size() %></div>
-            <div class="admin-stat-label">Total Users</div>
-        </div>
-        <div class="admin-stat-card">
-            <div class="admin-stat-num"><%= adminCount %></div>
-            <div class="admin-stat-label">Admins</div>
-        </div>
-        <div class="admin-stat-card">
-            <div class="admin-stat-num" style="color:var(--error)"><%= bannedCount %></div>
-            <div class="admin-stat-label">Banned</div>
-        </div>
-        <div class="admin-stat-card">
-            <div class="admin-stat-num"><%= bots.size() %></div>
-            <div class="admin-stat-label">Bots</div>
-        </div>
-    </div>
-
-    <!-- ── Users Section ─────────────────────────────── -->
-    <div class="admin-section">
-        <div class="admin-section-header">
-            <h2 class="admin-section-title" style="margin-bottom:0">Users</h2>
-            <input type="text" id="userSearch" class="form-input" style="max-width:240px" placeholder="Search users…" oninput="filterTable('userSearch','usersTable')">
-        </div>
-        <% if (users.isEmpty()) { %>
-        <div class="admin-empty">No users found.</div>
-        <% } else { %>
-        <table class="admin-table" id="usersTable">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Joined</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-            <% for (User u : users) {
-                boolean isSelf = u.getId().equals(currentUserId);
-            %>
-                <tr class="<%= u.isBanned() ? "admin-row-banned" : (u.isAdmin() ? "admin-row-preset" : "") %>">
-                    <td class="admin-td-name">
-                        <%= esc(u.getUsername()) %>
-                        <% if (isSelf) { %><span class="admin-owner-admin">you</span><% } %>
-                    </td>
-                    <td class="admin-td-owner"><%= esc(u.getEmail()) %></td>
-                    <td class="admin-td-owner" style="white-space:nowrap"><%= u.getCreatedAt() != null ? u.getCreatedAt().toLocalDate().toString() : "" %></td>
-                    <td>
-                        <% if (u.isAdmin()) { %>
-                            <span class="admin-preset-badge" style="font-size:11px">ADMIN</span>
-                        <% } else { %>
-                            <span style="color:var(--text-muted);font-size:12px">User</span>
-                        <% } %>
-                    </td>
-                    <td>
-                        <% if (u.isBanned()) { %>
-                            <span class="admin-banned-badge">BANNED</span>
-                        <% } else { %>
-                            <span style="color:var(--text-muted);font-size:12px">Active</span>
-                        <% } %>
-                    </td>
-                    <td class="admin-td-actions">
-                        <% if (!isSelf) { %>
-                        <button type="button" class="admin-toggle-btn"
-                            onclick="openEditModal(<%= u.getId() %>, '<%= esc(u.getUsername()) %>', '<%= esc(u.getEmail()) %>')">
-                            Edit
-                        </button>
-                        <form method="POST" action="${pageContext.request.contextPath}/adminToggleAdmin" style="display:inline">
-                            <input type="hidden" name="toggleAdminId" value="<%= u.getId() %>">
-                            <input type="hidden" name="toggleAdminValue" value="<%= !u.isAdmin() %>">
-                            <button type="submit" class="admin-toggle-btn <%= u.isAdmin() ? "active" : "" %>">
-                                <%= u.isAdmin() ? "Revoke Admin" : "Make Admin" %>
-                            </button>
-                        </form>
-                        <button type="button" class="admin-toggle-btn <%= u.isBanned() ? "active" : "danger" %>"
-                            onclick="openBanReasonModal(<%= u.getId() %>, '<%= esc(u.getUsername()) %>', <%= u.isBanned() %>)">
-                            <%= u.isBanned() ? "Unban" : "Ban" %>
-                        </button>
-                        <form method="POST" action="${pageContext.request.contextPath}/adminSendPasswordReset" style="display:inline">
-                            <input type="hidden" name="resetUserId" value="<%= u.getId() %>">
-                            <button type="submit" class="admin-toggle-btn"
-                                title="Send password reset email to <%= esc(u.getEmail()) %>">
-                                Reset PW
-                            </button>
-                        </form>
-                        <button type="button" class="admin-toggle-btn"
-                            onclick="openAcademyModal(<%= u.getId() %>, '<%= esc(u.getUsername()) %>', <%= u.getKnowledgePoints() %>, '<%= u.getUnlockedPieces() != null ? esc(u.getUnlockedPieces()) : "" %>')">
-                            Academy
-                        </button>
-                        <% } else { %>
-                        <span style="color:var(--text-muted);font-size:12px">—</span>
-                        <% } %>
-                    </td>
-                </tr>
-            <% } %>
-            </tbody>
-        </table>
-        <% } %>
-        <div class="admin-paginator" id="usersTable-paginator"></div>
-    </div>
-
-    <!-- ── Bots Section ──────────────────────────────── -->
-    <div class="admin-section">
-        <div class="admin-section-header">
-            <h2 class="admin-section-title" style="margin-bottom:0">Bots</h2>
-            <div class="admin-section-controls">
-                <input type="text" id="botSearch" class="form-input" style="max-width:200px" placeholder="Search bots…" oninput="filterTable('botSearch','botsTable')">
-                <button type="button" class="btn btn-green" onclick="openCreateBotModal()">+ New Bot</button>
-            </div>
-        </div>
-        <% if (bots.isEmpty()) { %>
-        <div class="admin-empty">No bots found. Create one to get started.</div>
-        <% } else { %>
-        <table class="admin-table" id="botsTable">
-            <thead>
-                <tr>
-                    <th>Portrait</th>
-                    <th>Name</th>
-                    <th>Elo</th>
-                    <th>Collection</th>
-                    <th>Lines</th>
-                    <th>Armies</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-            <% for (Bot bot : bots) { %>
-                <tr>
-                    <td style="width:48px">
-                        <% if (bot.getImagePath() != null) { %>
-                        <img src="${pageContext.request.contextPath}/<%= esc(bot.getImagePath()) %>"
-                             style="width:40px;height:40px;border-radius:6px;object-fit:cover" alt="">
-                        <% } else { %>
-                        <div style="width:40px;height:40px;border-radius:6px;background:var(--surface-alt);display:flex;align-items:center;justify-content:center;font-size:20px">&#9816;</div>
-                        <% } %>
-                    </td>
-                    <td class="admin-td-name"><%= esc(bot.getName()) %></td>
-                    <td class="admin-td-owner"><%= bot.getElo() %></td>
-                    <td class="admin-td-owner">
-                        <%= bot.getCollection() != null ? esc(bot.getCollection()) : "<span style='color:var(--text-muted);font-size:12px'>—</span>" %>
-                    </td>
-                    <td class="admin-td-owner" style="font-size:12px;color:var(--text-muted)">
-                        <%= bot.getVoicelines().size() %>g /
-                        <%= bot.getG0CaptureLines().size() + bot.getG0TakeLines().size() %>g0 /
-                        <%= bot.getG1CaptureLines().size() + bot.getG1TakeLines().size() %>g1 /
-                        <%= bot.getG2CaptureLines().size() + bot.getG2TakeLines().size() %>g2
-                    </td>
-                    <td class="admin-td-owner"><%= bot.getArmies().size() %></td>
-                    <td class="admin-td-actions">
-                        <button type="button" class="admin-toggle-btn"
-                            onclick="openEditBotModal(<%= bot.getId() %>)">Edit</button>
-                        <form method="POST" action="${pageContext.request.contextPath}/adminDeleteBot" style="display:inline"
-                            onsubmit="return confirm('Delete bot \'<%= esc(bot.getName()) %>\'?')">
-                            <input type="hidden" name="botId" value="<%= bot.getId() %>">
-                            <button type="submit" class="admin-toggle-btn danger">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-            <% } %>
-            </tbody>
-        </table>
-        <% } %>
-        <div class="admin-paginator" id="botsTable-paginator"></div>
+        <div id="acadModalMsg" style="margin-top:10px;font-size:13px;text-align:center;min-height:20px;color:var(--moss)"></div>
     </div>
 </div>
 
 <script>
-// ── Bot data registry ──────────────────────────────────────────────────────
+var CTX = "${pageContext.request.contextPath}";
 var botRegistry = {};
 <%
 try {
@@ -533,33 +740,30 @@ botRegistry[<%= bot.getId() %>] = {
     loseLines: <%= jsonMapper.writeValueAsString(bot.getLoseLines()) %>,
     armyIds: [<% List<Army> ba = bot.getArmies(); for (int i=0; i<ba.size(); i++) { if(i>0)out.print(","); out.print(ba.get(i).getId()); } %>]
 };
-<%
-    }
+<%  }
 } catch (Exception e) { /* serialization failed */ }
 %>
 
-// ── Ban reason modal ───────────────────────────────────────────────────────
 function openBanReasonModal(id, username, currentlyBanned) {
     document.getElementById('banReasonUserId').value = id;
     document.getElementById('banReasonValue').value = !currentlyBanned;
     document.getElementById('banReasonText').value = '';
     if (currentlyBanned) {
         document.getElementById('banReasonTitle').textContent = 'Unban Player: ' + username;
-        document.getElementById('banReasonLabel').innerHTML = 'Unban Reason <span style="color:var(--text-muted);font-weight:400">(optional note for the player)</span>';
+        document.getElementById('banReasonLabel').textContent = 'Unban Reason (optional note)';
         document.getElementById('banReasonSubmitBtn').textContent = 'Unban Player';
-        document.getElementById('banReasonSubmitBtn').className = 'btn btn-green';
+        document.getElementById('banReasonSubmitBtn').className = 'btn primary';
     } else {
         document.getElementById('banReasonTitle').textContent = 'Ban Player: ' + username;
-        document.getElementById('banReasonLabel').innerHTML = 'Ban Reason <span style="color:var(--text-muted);font-weight:400">(shown to the player)</span>';
+        document.getElementById('banReasonLabel').textContent = 'Ban Reason (shown to the player)';
         document.getElementById('banReasonSubmitBtn').textContent = 'Ban Player';
-        document.getElementById('banReasonSubmitBtn').className = 'btn btn-danger';
+        document.getElementById('banReasonSubmitBtn').className = 'btn danger';
     }
     document.getElementById('banReasonModal').style.display = 'flex';
 }
 function closeBanReasonModal() { document.getElementById('banReasonModal').style.display = 'none'; }
 document.getElementById('banReasonModal').addEventListener('click', function(e) { if(e.target===this) closeBanReasonModal(); });
 
-// ── User modal ─────────────────────────────────────────────────────────────
 function openEditModal(id, username, email) {
     document.getElementById('editUserId').value = id;
     document.getElementById('editUsername').value = username;
@@ -570,29 +774,24 @@ function openEditModal(id, username, email) {
 function closeEditModal() { document.getElementById('editUserModal').style.display = 'none'; }
 document.getElementById('editUserModal').addEventListener('click', function(e) { if(e.target===this) closeEditModal(); });
 
-// ── Create bot modal ───────────────────────────────────────────────────────
 function openCreateBotModal() { document.getElementById('createBotModal').style.display = 'flex'; }
 function closeCreateBotModal() { document.getElementById('createBotModal').style.display = 'none'; }
 document.getElementById('createBotModal').addEventListener('click', function(e) { if(e.target===this) closeCreateBotModal(); });
 
-// ── Edit bot modal ─────────────────────────────────────────────────────────
 function openEditBotModal(id) {
     var data = botRegistry[id];
     if (!data) return;
-
     document.getElementById('editBotId').value = id;
     document.getElementById('uploadBotId').value = id;
     document.getElementById('editBotName').value = data.name;
     document.getElementById('editBotElo').value = data.elo;
     document.getElementById('editBotCollection').value = data.collection || '';
-
     var imgEl = document.getElementById('botCurrentImage');
     if (data.imagePath) {
-        imgEl.innerHTML = '<img src="${pageContext.request.contextPath}/' + data.imagePath + '" style="width:100%;height:100%;object-fit:cover" alt="">';
+        imgEl.innerHTML = '<img src="' + CTX + '/' + data.imagePath + '" style="width:100%;height:100%;object-fit:cover" alt="">';
     } else {
-        imgEl.innerHTML = '<span style="font-size:32px">&#9816;</span>';
+        imgEl.innerHTML = '<span style="font-size:32px">♟</span>';
     }
-
     renderLines('editBotVoicelines', data.voicelines);
     renderLines('editBotG0Lines', data.g0);
     renderLines('editBotG1Lines', data.g1);
@@ -602,27 +801,22 @@ function openEditBotModal(id) {
     renderLines('editBotG2TakeLines', data.g2take);
     renderLines('editBotWinLines', data.winLines);
     renderLines('editBotLoseLines', data.loseLines);
-
     document.querySelectorAll('.bot-army-checkbox').forEach(function(cb) {
         cb.checked = data.armyIds.indexOf(parseInt(cb.value)) !== -1;
     });
-
     document.getElementById('editBotModal').style.display = 'flex';
     document.getElementById('editBotModal').querySelector('.modal-box').scrollTop = 0;
 }
 function closeEditBotModal() { document.getElementById('editBotModal').style.display = 'none'; }
 document.getElementById('editBotModal').addEventListener('click', function(e) { if(e.target===this) closeEditBotModal(); });
 
-// ── Voiceline helpers ──────────────────────────────────────────────────────
 function renderLines(containerId, lines) {
     var container = document.getElementById(containerId);
     container.innerHTML = '';
     if (lines && lines.length > 0) lines.forEach(function(l) { addLine(containerId, l); });
 }
 
-// ── Table pagination + search ──────────────────────────────────────────────
 var PG_SIZE = 10;
-
 function filterTable(inputId, tableId) {
     var q = document.getElementById(inputId).value.toLowerCase();
     document.querySelectorAll('#' + tableId + ' tbody tr').forEach(function(row) {
@@ -630,150 +824,84 @@ function filterTable(inputId, tableId) {
     });
     renderPaginator(tableId, 1);
 }
-
 function renderPaginator(tableId, page) {
     var rows = Array.from(document.querySelectorAll('#' + tableId + ' tbody tr:not(.search-hidden)'));
-    var total = rows.length;
-    var totalPages = Math.max(1, Math.ceil(total / PG_SIZE));
+    var total = rows.length, totalPages = Math.max(1, Math.ceil(total / PG_SIZE));
     page = Math.min(Math.max(1, page), totalPages);
-
-    rows.forEach(function(row, i) {
-        row.classList.toggle('pg-hidden', i < (page - 1) * PG_SIZE || i >= page * PG_SIZE);
-    });
-
+    rows.forEach(function(row, i) { row.classList.toggle('pg-hidden', i < (page - 1) * PG_SIZE || i >= page * PG_SIZE); });
     var el = document.getElementById(tableId + '-paginator');
     if (!el) return;
     el.innerHTML = '';
     if (totalPages <= 1) return;
-
     function mkBtn(label, target, disabled, active) {
-        var b = document.createElement('button');
-        b.type = 'button';
+        var b = document.createElement('button'); b.type = 'button';
         b.className = 'pg-btn' + (active ? ' pg-active' : '') + (disabled ? ' pg-disabled' : '');
         b.textContent = label;
         if (!disabled) b.onclick = function() { renderPaginator(tableId, target); };
         el.appendChild(b);
     }
-
     mkBtn('‹', page - 1, page === 1, false);
     var start = Math.max(1, page - 2), end = Math.min(totalPages, page + 2);
-    if (start > 1) { mkBtn('1', 1, false, false); if (start > 2) { var sp=document.createElement('span'); sp.className='pg-ellipsis'; sp.textContent='…'; el.appendChild(sp); } }
+    if (start > 1) { mkBtn('1', 1, false, false); if (start > 2) { var sp = document.createElement('span'); sp.className = 'pg-ellipsis'; sp.textContent = '…'; el.appendChild(sp); } }
     for (var p = start; p <= end; p++) mkBtn(p, p, false, p === page);
-    if (end < totalPages) { if (end < totalPages - 1) { var sp2=document.createElement('span'); sp2.className='pg-ellipsis'; sp2.textContent='…'; el.appendChild(sp2); } mkBtn(totalPages, totalPages, false, false); }
+    if (end < totalPages) { if (end < totalPages - 1) { var sp2 = document.createElement('span'); sp2.className = 'pg-ellipsis'; sp2.textContent = '…'; el.appendChild(sp2); } mkBtn(totalPages, totalPages, false, false); }
     mkBtn('›', page + 1, page === totalPages, false);
 }
-
 function addLine(containerId, value) {
     var container = document.getElementById(containerId);
     var fieldName = container.dataset.field;
-    var div = document.createElement('div');
-    div.style.cssText = 'display:flex;gap:6px;margin-bottom:6px';
-    var input = document.createElement('input');
-    input.type = 'text'; input.name = fieldName; input.className = 'form-input';
-    input.style.flex = '1'; input.value = (value !== undefined && value !== null) ? value : '';
-    var btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'btn btn-outline';
-    btn.style.cssText = 'padding:4px 10px;min-width:34px'; btn.textContent = '×';
-    btn.onclick = function() { div.remove(); };
-    div.appendChild(input); div.appendChild(btn);
-    container.appendChild(div);
+    var div = document.createElement('div'); div.style.cssText = 'display:flex;gap:6px;margin-bottom:6px';
+    var input = document.createElement('input'); input.type = 'text'; input.name = fieldName; input.className = 'form-input'; input.style.flex = '1'; input.value = (value !== undefined && value !== null) ? value : '';
+    var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn sm'; btn.style.cssText = 'padding:4px 10px;min-width:34px'; btn.textContent = '×'; btn.onclick = function() { div.remove(); };
+    div.appendChild(input); div.appendChild(btn); container.appendChild(div);
 }
 
-// ── Academy modal ──────────────────────────────────────────────────────────
-var ACAD_PIECES = [
-    'EVIL_PAWN','SQUIRE','LONGPAW','RETREATER','HOLLOW','CRAWLER',
-    'JESTER','LANCER','ECLIPSE','DUKE','BEAST_HANDLER','BIRD','SHIELD',
-    'PRINCE','CHOIR','EAGLE','COIL','BOOT','FEATHER','WIZARD','HERBALIST','PRINCESS',
-    'HUSK','LANTERN','ORACLE','WARDEN','HYDRA','LIBRARY','FORK'
-];
+var ACAD_PIECES = ['EVIL_PAWN','SQUIRE','LONGPAW','RETREATER','HOLLOW','CRAWLER','JESTER','LANCER','ECLIPSE','DUKE','BEAST_HANDLER','BIRD','SHIELD','PRINCE','CHOIR','EAGLE','COIL','BOOT','FEATHER','WIZARD','HERBALIST','PRINCESS','HUSK','LANTERN','ORACLE','WARDEN','HYDRA','LIBRARY','FORK'];
 var currentAcadUserId = null;
 var currentAcadKP = 0;
-
 function openAcademyModal(userId, username, kp, unlockedStr) {
-    currentAcadUserId = userId;
-    currentAcadKP = kp;
+    currentAcadUserId = userId; currentAcadKP = kp;
     document.getElementById('acadModalUser').textContent = username;
     document.getElementById('acadCurrentKP').textContent = kp;
     document.getElementById('acadKpAmount').value = 10;
     document.getElementById('acadModalMsg').textContent = '';
-
     var unlocked = unlockedStr ? unlockedStr.split(',').map(function(s){return s.trim();}).filter(Boolean) : [];
-    var list = document.getElementById('acadUnlockList');
-    list.innerHTML = '';
+    var list = document.getElementById('acadUnlockList'); list.innerHTML = '';
     ACAD_PIECES.forEach(function(piece) {
         var label = document.createElement('label');
-        label.style.cssText = 'display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-primary)';
-        var cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.value = piece;
-        cb.checked = unlocked.indexOf(piece) !== -1;
-        cb.id = 'acad_cb_' + piece;
-        label.appendChild(cb);
-        label.appendChild(document.createTextNode(piece.replace(/_/g,' ')));
+        label.style.cssText = 'display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;padding:4px 6px;border-radius:4px;border:1px solid var(--line);background:var(--bg)';
+        var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = piece; cb.checked = unlocked.indexOf(piece) !== -1; cb.id = 'acad_cb_' + piece;
+        label.appendChild(cb); label.appendChild(document.createTextNode(piece.replace(/_/g,' ')));
         list.appendChild(label);
     });
-
     document.getElementById('academyModal').style.display = 'flex';
 }
-
-function closeAcademyModal() {
-    document.getElementById('academyModal').style.display = 'none';
-    currentAcadUserId = null;
-}
+function closeAcademyModal() { document.getElementById('academyModal').style.display = 'none'; currentAcadUserId = null; }
 document.getElementById('academyModal').addEventListener('click', function(e) { if(e.target===this) closeAcademyModal(); });
-
-function setAcadMsg(msg, isError) {
-    var el = document.getElementById('acadModalMsg');
-    el.textContent = msg;
-    el.style.color = isError ? 'var(--error)' : 'var(--green)';
-}
-
+function setAcadMsg(msg, isError) { var el = document.getElementById('acadModalMsg'); el.textContent = msg; el.style.color = isError ? 'var(--crimson)' : 'var(--moss)'; }
 function doAcadKP(sign) {
     if (!currentAcadUserId) return;
     var amount = parseInt(document.getElementById('acadKpAmount').value) || 0;
     if (amount <= 0) { setAcadMsg('Enter a valid amount.', true); return; }
     var delta = sign * amount;
-    var fd = new FormData();
-    fd.append('acadUserId', currentAcadUserId);
-    fd.append('acadKpDelta', delta);
-    fetch('${pageContext.request.contextPath}/adminManageAcademy', {method:'POST', body:fd})
+    var fd = new FormData(); fd.append('acadUserId', currentAcadUserId); fd.append('acadKpDelta', delta);
+    fetch(CTX + '/adminManageAcademy', {method:'POST', body:fd})
         .then(function(r){return r.json();})
-        .then(function(data){
-            if (data.ok) {
-                currentAcadKP = data.kp;
-                document.getElementById('acadCurrentKP').textContent = data.kp;
-                setAcadMsg((delta > 0 ? '+' : '') + delta + ' KP applied. New total: ' + data.kp, false);
-            } else {
-                setAcadMsg('Error: ' + (data.error || 'unknown'), true);
-            }
-        }).catch(function(){ setAcadMsg('Network error.', true); });
+        .then(function(data){ if (data.ok) { currentAcadKP = data.kp; document.getElementById('acadCurrentKP').textContent = data.kp; setAcadMsg((delta > 0 ? '+' : '') + delta + ' KP. New total: ' + data.kp, false); } else { setAcadMsg('Error: ' + (data.error || 'unknown'), true); } })
+        .catch(function(){ setAcadMsg('Network error.', true); });
 }
-
 function doAcadSaveUnlocks() {
     if (!currentAcadUserId) return;
-    var checked = [];
-    ACAD_PIECES.forEach(function(piece) {
-        var cb = document.getElementById('acad_cb_' + piece);
-        if (cb && cb.checked) checked.push(piece);
-    });
-    var fd = new FormData();
-    fd.append('acadUserId', currentAcadUserId);
-    fd.append('acadKpDelta', 0);
-    fd.append('acadUnlockedPieces', checked.join(','));
-    fetch('${pageContext.request.contextPath}/adminManageAcademy', {method:'POST', body:fd})
+    var checked = ACAD_PIECES.filter(function(p){ var cb = document.getElementById('acad_cb_' + p); return cb && cb.checked; });
+    var fd = new FormData(); fd.append('acadUserId', currentAcadUserId); fd.append('acadKpDelta', 0); fd.append('acadUnlockedPieces', checked.join(','));
+    fetch(CTX + '/adminManageAcademy', {method:'POST', body:fd})
         .then(function(r){return r.json();})
-        .then(function(data){
-            if (data.ok) {
-                setAcadMsg('Unlocks saved (' + checked.length + ' pieces).', false);
-            } else {
-                setAcadMsg('Error: ' + (data.error || 'unknown'), true);
-            }
-        }).catch(function(){ setAcadMsg('Network error.', true); });
+        .then(function(data){ if (data.ok) { setAcadMsg('Unlocks saved (' + checked.length + ' pieces).', false); } else { setAcadMsg('Error: ' + (data.error || 'unknown'), true); } })
+        .catch(function(){ setAcadMsg('Network error.', true); });
 }
 
-// ── Init paginators on load ────────────────────────────────────────────────
 (function() {
-    var tables = ['usersTable', 'botsTable'];
+    var tables = ['usersTable', 'botsTable', 'matchesTable'];
     tables.forEach(function(t) { if (document.getElementById(t)) renderPaginator(t, 1); });
 })();
 </script>
