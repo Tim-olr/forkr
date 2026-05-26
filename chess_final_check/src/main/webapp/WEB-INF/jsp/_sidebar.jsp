@@ -1,4 +1,4 @@
-<%-- _sidebar.jsp — app shell sidebar. Include after opening <div class="app-shell">.
+<%-- _sidebar.jsp — app shell sidebar + mobile nav. Include after opening <div class="app-shell">.
      Requires session attrs: username, isAdmin. Caller sets activeNav (String). --%>
 <%
     Object _activeNavObj = pageContext.getAttribute("activeNav");
@@ -10,7 +10,44 @@
     String _avatarLetter = (_username != null && !_username.isEmpty())
         ? String.valueOf(_username.charAt(0)).toUpperCase() : "?";
     String _sidebarPic = (String) session.getAttribute("profilePicPath");
+    boolean _playActive    = "online".equals(_activeNav) || "bots".equals(_activeNav) || "local".equals(_activeNav);
+    boolean _buildActive   = "army".equals(_activeNav);
+    boolean _academyActive = "academy".equals(_activeNav);
+    boolean _meActive      = "profile".equals(_activeNav) || "support".equals(_activeNav) || "admin".equals(_activeNav);
 %>
+
+<%-- Mobile: top header (hidden on desktop via CSS) --%>
+<header class="mobile-header">
+    <a href="${pageContext.request.contextPath}/home" style="display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <rect x="2" y="18" width="20" height="3" rx="1" fill="#d4a44a"/>
+            <rect x="9" y="15" width="6" height="3" rx="0.5" fill="#d4a44a"/>
+            <circle cx="12" cy="10" r="4" fill="#d4a44a"/>
+            <circle cx="12" cy="10" r="1.5" fill="#14110d"/>
+        </svg>
+        <span style="font-family:var(--font-display);font-size:17px;letter-spacing:-0.01em">Gambitonline</span>
+    </a>
+    <div style="display:flex;align-items:center;gap:4px">
+        <a href="${pageContext.request.contextPath}/support"
+           class="icon-btn <%= "support".equals(_activeNav) ? "mobile-header-icon-active" : "" %>"
+           title="Support" style="width:34px;height:34px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M9 9c0-1.66 1.34-3 3-3s3 1.34 3 3c0 2.25-3 2.25-3 4.5M12 18v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </a>
+        <% if (_isAdmin) { %>
+        <a href="${pageContext.request.contextPath}/admin"
+           class="icon-btn <%= "admin".equals(_activeNav) ? "mobile-header-icon-active" : "" %>"
+           title="Admin Dashboard" style="width:34px;height:34px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+        </a>
+        <% } %>
+        <div class="avatar" style="width:28px;height:28px;font-size:11px;flex-shrink:0<% if (_sidebarPic != null && !_sidebarPic.isEmpty()) { %>;border-radius:50%;overflow:hidden;background:none<% } %>">
+            <% if (_sidebarPic != null && !_sidebarPic.isEmpty()) { %>
+            <img src="${pageContext.request.contextPath}/<%= _sidebarPic %>" style="width:100%;height:100%;object-fit:cover;display:block" alt="<%= _avatarLetter %>">
+            <% } else { %><%= _avatarLetter %><% } %>
+        </div>
+    </div>
+</header>
+
 <nav class="sidebar">
     <a href="${pageContext.request.contextPath}/home" class="sidebar-brand" style="text-decoration:none;color:inherit">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -19,7 +56,7 @@
             <circle cx="12" cy="10" r="4" fill="#d4a44a"/>
             <circle cx="12" cy="10" r="1.5" fill="#14110d"/>
         </svg>
-        <span style="font-family:var(--font-display);font-size:18px;letter-spacing:-0.01em">Forkr</span>
+        <span style="font-family:var(--font-display);font-size:18px;letter-spacing:-0.01em">Gambitonline</span>
     </a>
 
     <div class="sidebar-group">
@@ -102,4 +139,38 @@
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
     </div>
+</nav>
+
+<%-- Mobile: bottom tab bar (hidden on desktop via CSS; fixed-positioned on mobile) --%>
+<nav class="mobile-tabbar">
+    <a href="${pageContext.request.contextPath}/home" class="mobile-tab <%= "home".equals(_activeNav) ? "active" : "" %>">
+        <span class="mobile-tab-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3l9 9v8a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="mobile-tab-label">Home</span>
+    </a>
+    <a href="${pageContext.request.contextPath}/online-game" class="mobile-tab <%= _playActive ? "active" : "" %>">
+        <span class="mobile-tab-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M9 12h6M12 9v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </span>
+        <span class="mobile-tab-label">Play</span>
+    </a>
+    <a href="${pageContext.request.contextPath}/army-builder" class="mobile-tab <%= _buildActive ? "active" : "" %>">
+        <span class="mobile-tab-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 3L4 9v12h16V9L12 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 21v-6h6v6" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="mobile-tab-label">Build</span>
+    </a>
+    <a href="${pageContext.request.contextPath}/academy" class="mobile-tab <%= _academyActive ? "active" : "" %>">
+        <span class="mobile-tab-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><polygon points="12,3 22,8 12,13 2,8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6 11v5c0 2.5 3 4 6 4s6-1.5 6-4v-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </span>
+        <span class="mobile-tab-label">Academy</span>
+    </a>
+    <a href="${pageContext.request.contextPath}/profile" class="mobile-tab <%= _meActive ? "active" : "" %>">
+        <span class="mobile-tab-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </span>
+        <span class="mobile-tab-label">Me</span>
+    </a>
 </nav>

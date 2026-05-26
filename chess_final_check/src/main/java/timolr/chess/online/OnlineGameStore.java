@@ -46,6 +46,11 @@ public class OnlineGameStore {
         public volatile boolean gameOver = false;
         public volatile String result = null;
         public volatile int newWhiteElo, newBlackElo;
+        // 10-minute chess clock
+        public volatile long whiteTimeMs = 600_000L;
+        public volatile long blackTimeMs = 600_000L;
+        public volatile long timerLastTick;
+        public volatile String timerTurn = "w";
 
         public GameState(String gameId, QueueEntry white, QueueEntry black) {
             this.gameId = gameId;
@@ -61,6 +66,7 @@ public class OnlineGameStore {
             this.blackArmyJson = black.blackArmyJson;
             this.newWhiteElo = white.elo;
             this.newBlackElo = black.elo;
+            this.timerLastTick = System.currentTimeMillis();
         }
 
         public boolean isWhite(String sid) { return whiteSessionId.equals(sid); }
@@ -79,6 +85,8 @@ public class OnlineGameStore {
 
         for (QueueEntry w : queue.values()) {
             if (w.sessionId.equals(sessionId)) continue;
+            // Skip stale entries (player stopped polling > 8s ago)
+            if (now - w.joinTime > 8000) continue;
             int diff = Math.abs(w.elo - elo);
             long waitedSec = (now - w.joinTime) / 1000;
             int maxDiff = (int) Math.min(200 + waitedSec * 15, 1500);
@@ -107,6 +115,10 @@ public class OnlineGameStore {
 
     public void cancelQueue(String sessionId) {
         queue.remove(sessionId);
+    }
+
+    public void clearSession(String sessionId) {
+        sessionToGame.remove(sessionId);
     }
 
     public GameState getGameForSession(String sessionId) {

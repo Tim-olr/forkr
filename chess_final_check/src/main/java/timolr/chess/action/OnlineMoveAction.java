@@ -30,24 +30,44 @@ public class OnlineMoveAction extends JsonAction {
         String color = g.colorOf(sessionId);
         String opponentColor = color.equals("w") ? "b" : "w";
 
+        // Deduct elapsed time from the moving player's clock
+        long now = System.currentTimeMillis();
+        long elapsed = now - g.timerLastTick;
+        if (color.equals("w")) {
+            g.whiteTimeMs = Math.max(0, g.whiteTimeMs - elapsed);
+        } else {
+            g.blackTimeMs = Math.max(0, g.blackTimeMs - elapsed);
+        }
+        g.timerLastTick = now;
+        g.timerTurn = opponentColor;
+
+        // Check if this player ran out of time
+        boolean timedOut = (color.equals("w") && g.whiteTimeMs <= 0)
+                        || (color.equals("b") && g.blackTimeMs <= 0);
+
         String promoJson = (promo == null || promo.isEmpty() || "null".equals(promo))
                 ? "null" : "\"" + promo + "\"";
         String moveJson = "{\"from\":" + from + ",\"to\":" + to + ",\"promo\":" + promoJson + "}";
         store.submitMove(gameId, color, moveJson);
 
-        if (gameoverResult != null && !gameoverResult.isEmpty()) {
+        String effectiveResult = timedOut ? opponentColor.equals("w") ? "white" : "black"
+                : gameoverResult;
+
+        if (effectiveResult != null && !effectiveResult.isEmpty()) {
             UserDAO userDAO = new UserDAO();
-            store.finishGame(gameId, gameoverResult, userDAO);
+            store.finishGame(gameId, effectiveResult, userDAO);
             store.submitGameoverNotification(gameId, opponentColor);
 
             int newElo = color.equals("w") ? g.newWhiteElo : g.newBlackElo;
             int oldElo = color.equals("w") ? g.whiteElo : g.blackElo;
             session.setAttribute("elo", newElo);
             return json("{\"ok\":true,\"gameover\":true,\"newElo\":" + newElo
-                    + ",\"eloChange\":" + (newElo - oldElo) + "}");
+                    + ",\"eloChange\":" + (newElo - oldElo)
+                    + ",\"wt\":" + g.whiteTimeMs + ",\"bt\":" + g.blackTimeMs + "}");
         }
 
-        return json("{\"ok\":true}");
+        return json("{\"ok\":true,\"wt\":" + g.whiteTimeMs + ",\"bt\":" + g.blackTimeMs
+                + ",\"tt\":\"" + g.timerTurn + "\"}");
     }
 
     public void setGameId(String gameId) { this.gameId = gameId; }

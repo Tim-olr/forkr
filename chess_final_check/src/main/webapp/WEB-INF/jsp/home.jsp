@@ -31,7 +31,7 @@
     <main class="page">
         <div class="page-head">
             <div class="crumb">
-                <span class="crumb-pre">Forkr</span>
+                <span class="crumb-pre">Gambitonline</span>
                 <h2>Dashboard</h2>
             </div>
             <div class="page-actions">

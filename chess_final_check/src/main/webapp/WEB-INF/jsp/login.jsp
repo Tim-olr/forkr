@@ -19,7 +19,7 @@
     <div class="login-art">
         <div class="login-art-mark">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="2" y="18" width="20" height="3" rx="1" fill="#d4a44a"/><rect x="9" y="15" width="6" height="3" rx="0.5" fill="#d4a44a"/><circle cx="12" cy="10" r="4" fill="#d4a44a"/><circle cx="12" cy="10" r="1.5" fill="#14110d"/></svg>
-            <span style="font-family:var(--font-display);font-size:20px;letter-spacing:-0.01em;color:var(--ink)">Forkr</span>
+            <span style="font-family:var(--font-display);font-size:20px;letter-spacing:-0.01em;color:var(--ink)">Gambitonline</span>
         </div>
         <div class="login-art-grid">
             <div class="login-board" id="artBoard"></div>
@@ -36,7 +36,7 @@
     <div class="login-form-wrap">
         <div class="login-form">
             <h1 class="display">Welcome back</h1>
-            <p class="sub">Sign in to your Forkr account</p>
+            <p class="sub">Sign in to your Gambitonline account</p>
 
             <s:if test="hasActionErrors()">
                 <div style="background:rgba(200,85,61,0.12);border:1px solid rgba(200,85,61,0.4);border-radius:4px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--crimson)">
@@ -71,7 +71,7 @@
             </a>
 
             <p style="margin-top:28px;font-size:13px;color:var(--ink-faint);text-align:center">
-                New to Forkr? <a href="${pageContext.request.contextPath}/register" style="color:var(--amber);text-decoration:none">Create an account</a>
+                New to Gambitonline? <a href="${pageContext.request.contextPath}/register" style="color:var(--amber);text-decoration:none">Create an account</a>
             </p>
         </div>
     </div>

@@ -35,6 +35,17 @@
         background: radial-gradient(circle, rgba(180,0,255,0.9) 0%, rgba(80,0,160,0.6) 50%, transparent 75%);
         animation: curseTrigger 0.7s ease-out forwards;
     }
+    @keyframes oracleStartReveal {
+        0%   { opacity: 0; transform: scale(0.3); }
+        30%  { opacity: 1; }
+        70%  { opacity: 0.9; transform: scale(1.6); }
+        100% { opacity: 0; transform: scale(2.8); }
+    }
+    .oracle-start-reveal {
+        position: absolute; inset: 0; pointer-events: none; z-index: 50;
+        background: radial-gradient(circle, rgba(220,60,255,1) 0%, rgba(120,0,200,0.7) 40%, transparent 70%);
+        animation: oracleStartReveal 1.1s ease-out forwards;
+    }
     @keyframes cursePulse {
         0%,100%{box-shadow:inset 0 0 0 2px rgba(180,0,255,0.5),inset 0 0 12px rgba(140,0,220,0.25);}
         50%{box-shadow:inset 0 0 0 3px rgba(220,80,255,0.95),inset 0 0 20px rgba(180,0,255,0.55);}
@@ -74,6 +85,33 @@
         background: rgba(40,80,180,0.18); pointer-events: none;
     }
     #ogCursePanel { margin-top: 8px; }
+    .player-clock {
+        font-family: var(--font-mono, monospace);
+        font-size: 20px;
+        font-weight: 600;
+        background: var(--bg-elev, #1a1612);
+        border: 1px solid var(--line, rgba(255,255,255,0.12));
+        border-radius: 4px;
+        padding: 5px 10px;
+        min-width: 68px;
+        text-align: center;
+        letter-spacing: 2px;
+        color: var(--ink, #fefbf2);
+        flex-shrink: 0;
+    }
+    .player-clock.clock-active {
+        border-color: var(--amber, #d4a44a);
+        color: var(--amber, #d4a44a);
+    }
+    .player-clock.clock-low {
+        color: var(--crimson, #c8553d) !important;
+        border-color: rgba(200,85,61,0.55) !important;
+        animation: clockPulse 0.8s ease-in-out infinite;
+    }
+    @keyframes clockPulse {
+        0%,100% { background: var(--bg-elev, #1a1612); }
+        50% { background: rgba(200,85,61,0.18); }
+    }
     </style>
 </head>
 <body>
@@ -98,10 +136,11 @@
     <div class="game-panel-left">
         <div class="player-info" id="topPlayerInfo">
             <div class="player-avatar" id="topAvatar">&#9812;</div>
-            <div>
+            <div style="flex:1">
                 <div class="player-name" id="topName">Opponent</div>
                 <div class="player-rating" id="topRating">600</div>
             </div>
+            <div class="player-clock" id="topClock">10:00</div>
         </div>
         <div class="game-status" id="statusBox">Waiting&hellip;</div>
         <div class="game-actions">
@@ -122,10 +161,11 @@
     <div class="game-panel-right">
         <div class="player-info" id="bottomPlayerInfo">
             <div class="player-avatar" id="bottomAvatar">&#9818;</div>
-            <div>
+            <div style="flex:1">
                 <div class="player-name" id="bottomName"><s:property value="loggedInUsername" /></div>
                 <div class="player-rating" id="bottomRating"><s:property value="loggedInElo" /></div>
             </div>
+            <div class="player-clock" id="bottomClock">10:00</div>
         </div>
         <div class="move-history" id="moveHistory">
             <h4>Move History</h4>
@@ -175,6 +215,50 @@ function playSound(name){var b=_SFX_BUFS[name];if(!b)return;if(_SFX_CTX.state===
 var gameId = null, myColor = null;
 var queueInterval = setInterval(pollQueue, 1200);
 var gameInterval = null;
+var inactivityTimer = null;
+
+// Chess clock state (synced from server each poll)
+var clkWt = 600000, clkBt = 600000, clkTurn = 'w', clkSyncAt = 0;
+
+function syncTimer(data) {
+    if (data.wt !== undefined) clkWt = data.wt;
+    if (data.bt !== undefined) clkBt = data.bt;
+    if (data.tt !== undefined) clkTurn = data.tt;
+    clkSyncAt = Date.now();
+}
+function clkGet(color) {
+    var base = color === 'w' ? clkWt : clkBt;
+    if (clkTurn === color && clkSyncAt > 0) {
+        base = Math.max(0, base - (Date.now() - clkSyncAt));
+    }
+    return base;
+}
+function clkFmt(ms) {
+    var s = Math.ceil(ms / 1000);
+    var m = Math.floor(s / 60); s = s % 60;
+    return m + ':' + (s < 10 ? '0' + s : s);
+}
+function renderClocks() {
+    if (!gs || !gs.board || gs.gameOver) return;
+    var flip = gs.playerColor === 'b';
+    // topClock = opponent's clock, bottomClock = my clock
+    var oppColor = gs.playerColor === 'w' ? 'b' : 'w';
+    var myTime = clkGet(gs.playerColor);
+    var oppTime = clkGet(oppColor);
+    var myTurn = gs.turn === gs.playerColor;
+    var oppTurn = !myTurn;
+    var bc = document.getElementById('bottomClock');
+    var tc = document.getElementById('topClock');
+    if (bc) {
+        bc.textContent = clkFmt(myTime);
+        bc.className = 'player-clock' + (myTurn ? ' clock-active' : '') + (myTime < 30000 ? ' clock-low' : '');
+    }
+    if (tc) {
+        tc.textContent = clkFmt(oppTime);
+        tc.className = 'player-clock' + (oppTurn ? ' clock-active' : '') + (oppTime < 30000 ? ' clock-low' : '');
+    }
+}
+setInterval(function() { if (gs && gs.board && !gs.gameOver) renderClocks(); }, 100);
 
 function pollQueue() {
     fetch(CTX + '/onlineQueue', {method:'POST'})
@@ -200,6 +284,8 @@ function onMatched(msg) {
     gameId = msg.gameId;
     myColor = msg.color;
     MY_ELO = msg.myElo;
+    // Reset chess clock display
+    clkWt = 600000; clkBt = 600000; clkTurn = 'w'; clkSyncAt = Date.now();
 
     document.getElementById('searchingScreen').style.display = 'none';
     document.getElementById('gameScreen').style.display = '';
@@ -215,6 +301,7 @@ function pollGame() {
     fetch(CTX + '/onlinePoll?gameId=' + encodeURIComponent(gameId) + '&color=' + myColor)
         .then(function(r){ return r.json(); })
         .then(function(msg){
+            syncTimer(msg);
             if (msg.type === 'move') {
                 handleOpponentMove(msg.move);
             } else if (msg.type === 'gameover') {
@@ -674,6 +761,36 @@ var OG_DRAG_THRESHOLD=5, OG_CELL_SIZE=70;
 // ── Arrow / highlight state ─────────────────────────────────────────────────────
 var ogArrows=[], ogHighlights=[], ogRightDragStart=null;
 
+function applyOracleAutoStart() {
+    for (var _or = 0; _or < 8; _or++) {
+        for (var _oc = 0; _oc < 8; _oc++) {
+            var _op = gs.board[_or][_oc];
+            if (!_op || tp(_op) !== 'u') continue;
+            var _oColor = col(_op);
+            if (gs.oracleHasCursed[_oColor]) continue;
+            var _candidates = [];
+            for (var _tr = 2; _tr <= 5; _tr++) {
+                for (var _tc = 0; _tc < 8; _tc++) {
+                    if (!gs.board[_tr][_tc]) _candidates.push([_tr, _tc]);
+                }
+            }
+            if (!_candidates.length) continue;
+            var _pick = _candidates[Math.floor(Math.random() * _candidates.length)];
+            gs.oracleCursedTile = _pick;
+            gs.oracleHasCursed[_oColor] = true;
+            (function(rr, cc) {
+                setTimeout(function() {
+                    var boardEl = document.getElementById('chessBoard'); if (!boardEl) return;
+                    var cell = boardEl.querySelector('[data-row="'+rr+'"][data-col="'+cc+'"]'); if (!cell) return;
+                    var flash = document.createElement('div'); flash.className = 'oracle-start-reveal';
+                    cell.style.position = 'relative'; cell.appendChild(flash);
+                    flash.addEventListener('animationend', function() { flash.remove(); }, {once:true});
+                }, 700);
+            })(_pick[0], _pick[1]);
+        }
+    }
+}
+
 window.startOnlineGame = function(color, whiteArmy, blackArmy, myName, myElo, oppName, oppElo) {
     var board=[];
     for(var i=0;i<8;i++) board.push([null,null,null,null,null,null,null,null]);
@@ -694,6 +811,7 @@ window.startOnlineGame = function(color, whiteArmy, blackArmy, myName, myElo, op
         lanternImmobile:[],lanternImmobileFor:null,
         oracleCursedTile:null,oracleHasCursed:{w:false,b:false},curseMode:false,
         viewIdx:-1};
+    applyOracleAutoStart();
     updatePanels(color, myName, myElo, oppName, oppElo);
     render();
     playSound('game_start');
@@ -734,10 +852,12 @@ function ogDoAnimateMove(from, to, piece, onDone) {
         if(onDone) onDone();
     }
     el.addEventListener('transitionend',finish,{once:true});
-    setTimeout(finish,250);
+    setTimeout(finish,300);
     requestAnimationFrame(function(){
-        el.style.transition='transform 0.13s ease';
-        el.style.transform='translate('+dx+'px,'+dy+'px)';
+        requestAnimationFrame(function(){
+            el.style.transition='transform 0.15s ease';
+            el.style.transform='translate('+dx+'px,'+dy+'px)';
+        });
     });
 }
 
@@ -810,6 +930,10 @@ window.execMove = function(from, to, promo, sendToServer, skipAnimation){
     else if(notation.includes('x')) playSound('take');
     else playSound('move');
 
+    // Optimistically advance local clock turn
+    clkTurn = gs.turn; // gs.turn was already flipped by execMove above
+    clkSyncAt = Date.now();
+
     if(sendToServer){
         var body=new URLSearchParams();
         body.append('gameId', gameId);
@@ -820,6 +944,7 @@ window.execMove = function(from, to, promo, sendToServer, skipAnimation){
         fetch(CTX+'/onlineMove', {method:'POST', body:body})
             .then(function(r){return r.json();})
             .then(function(msg){
+                syncTimer(msg);
                 if(msg.gameover && msg.newElo !== undefined){
                     clearInterval(gameInterval);
                     MY_ELO=msg.newElo;
@@ -1051,8 +1176,60 @@ function showPromo(){
     modal.style.display='flex';
 }
 
+// Warn before leaving during an active online game; cancel search on page leave
+window.addEventListener('beforeunload', function(e) {
+    if (gameId && !gs.gameOver) {
+        e.preventDefault();
+        e.returnValue = '';
+    } else if (!gameId) {
+        // Silently cancel the queue when navigating away during search
+        navigator.sendBeacon(CTX + '/onlineCancel', '');
+    }
+});
+
+// Inactivity resign: auto-resign after 1 minute of not viewing the board
+document.addEventListener('visibilitychange', function() {
+    if (!gameId || !gs || gs.gameOver) return;
+    if (document.hidden) {
+        inactivityTimer = setTimeout(function() {
+            if (!gameId || !gs || gs.gameOver) return;
+            clearInterval(gameInterval);
+            var result = myColor === 'w' ? 'black' : 'white';
+            gs.gameOver = true;
+            gs.result = 'You were disconnected (inactive).';
+            playSound('game_end');
+            render();
+            renderOverlay();
+            var body = new URLSearchParams();
+            body.append('gameId', gameId);
+            body.append('result', result);
+            fetch(CTX + '/onlineFinish', {method:'POST', body:body}).catch(function(){});
+        }, 60000);
+    } else {
+        if (inactivityTimer) { clearTimeout(inactivityTimer); inactivityTimer = null; }
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('chessBoard').addEventListener('contextmenu',function(e){e.preventDefault();});
+
+    // Intercept sidebar/nav link clicks — confirm resign before navigating away
+    document.querySelectorAll('.sidebar a, .nav-item').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            if (!gameId || gs.gameOver) return;
+            if (!confirm('Leaving this page will resign your online game. Are you sure?')) {
+                e.preventDefault();
+                return;
+            }
+            clearInterval(gameInterval);
+            var result = myColor === 'w' ? 'black' : 'white';
+            gs.gameOver = true;
+            var body = new URLSearchParams();
+            body.append('gameId', gameId);
+            body.append('result', result);
+            fetch(CTX + '/onlineFinish', {method:'POST', body:body}).catch(function(){});
+        });
+    });
 
     // ── Drag & drop + arrow global handlers ──────────────────────────────────────
     document.addEventListener('mousedown',function(e){

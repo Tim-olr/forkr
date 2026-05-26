@@ -768,33 +768,96 @@ a { color: inherit; }
 @media (max-width: 760px) {
   body { font-size: 14px; overflow: auto; }
   html, body { height: 100%; min-height: 100%; }
+
+  /* App shell: full-height column, sidebar hidden */
   .app-shell { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
   .sidebar { display: none; }
-  .mobile-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #100e0a; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+
+  /* Mobile top header */
+  .mobile-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; background: #100e0a; border-bottom: 1px solid var(--line);
+    flex-shrink: 0; min-height: 50px; z-index: 50;
+  }
+
+  /* Page fills remaining space, scrolls internally */
   .page { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
-  .page-head { padding: 12px 14px; flex-direction: column; align-items: flex-start; gap: 10px; }
-  .page-head h2 { font-size: 18px; white-space: normal; line-height: 1.25; }
-  .page-body { padding: 14px; }
-  .mobile-tabbar { display: grid; grid-template-columns: repeat(4,1fr); background: #100e0a; border-top: 1px solid var(--line); flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom,0px); }
-  .mobile-tab { background: transparent; border: 0; color: var(--ink-faint); padding: 10px 6px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; border-top: 2px solid transparent; margin-top: -1px; min-height: 56px; }
+  .page-head { padding: 12px 16px; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .page-head h2 { font-size: 19px; white-space: normal; line-height: 1.2; }
+  .page-head .crumb { flex-direction: column; gap: 2px; }
+  .page-actions { width: 100%; }
+  .page-actions .btn { width: 100%; justify-content: center; }
+  /* Page body scrolls; bottom padding avoids content hiding behind fixed tabbar */
+  .page-body { padding: 14px 14px calc(70px + env(safe-area-inset-bottom, 0px)); overflow: auto; }
+
+  /* Mobile bottom tab bar — fixed to viewport bottom */
+  .mobile-tabbar {
+    display: grid; grid-template-columns: repeat(5,1fr);
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    background: #100e0a; border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .mobile-tab {
+    background: transparent; border: 0; text-decoration: none;
+    color: var(--ink-faint); padding: 0 4px;
+    display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px;
+    border-top: 2px solid transparent; margin-top: -1px; min-height: 48px;
+  }
   .mobile-tab.active { color: var(--amber); border-top-color: var(--amber); background: rgba(212,164,74,0.05); }
-  .mobile-tab-icon { position: relative; display: grid; place-items: center; }
+  .mobile-tab-icon { position: relative; display: grid; place-items: center; flex-shrink: 0; }
   .mobile-tab-dot { position: absolute; top: -2px; right: -6px; width: 6px; height: 6px; border-radius: 50%; background: var(--crimson); }
-  .mobile-tab-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .mobile-tab-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+  /* Mobile header icon active state */
+  .mobile-header-icon-active { color: var(--amber) !important; border-color: rgba(212,164,74,0.4) !important; background: rgba(212,164,74,0.08) !important; }
+
+  /* Auth / public pages */
   .login-shell { grid-template-columns: minmax(0,1fr); height: auto; min-height: 100vh; overflow: auto; }
-  .login-art { height: 220px; border-right: 0; border-bottom: 1px solid var(--line); overflow: hidden; }
-  .login-board { transform: translate(-50%,-50%) rotate(-8deg) scale(0.55); }
+  .login-art { height: 200px; border-right: 0; border-bottom: 1px solid var(--line); overflow: hidden; }
+  .login-board { transform: translate(-50%,-50%) rotate(-8deg) scale(0.52); }
   .login-art-foot, .login-tag { display: none; }
   .login-form-wrap { padding: 28px 20px 48px; }
-  .login-form h1 { font-size: 30px; }
-  .play-grid, .army-grid { grid-template-columns: minmax(0,1fr); grid-template-rows: auto auto; gap: 14px; height: auto; }
-  .home-hero { grid-template-columns: minmax(0,1fr); padding: 20px; gap: 16px; }
-  .home-title { font-size: 28px; }
+  .login-form h1 { font-size: 28px; }
+  .login-form { max-width: 100%; }
+
+  /* Game grids */
+  .play-grid, .army-grid { grid-template-columns: minmax(0,1fr); grid-template-rows: auto; gap: 12px; height: auto; }
+
+  /* Home dashboard */
+  .home-hero { grid-template-columns: minmax(0,1fr); padding: 18px; gap: 14px; }
+  .home-title { font-size: 26px; }
+  .home-sub { font-size: 13px; }
+  .home-cta-row { gap: 8px; }
+  .home-cta-row .btn { flex: 1 1 calc(50% - 8px); min-width: 0; justify-content: center; font-size: 13px; }
+  .home-hero-right { flex-direction: row; flex-wrap: wrap; min-width: 0; gap: 8px; }
+  .home-stat { flex: 1 1 130px; min-width: 0; }
+  .home-stat-val { font-size: 22px; }
   .home-grid { grid-template-columns: minmax(0,1fr); gap: 12px; }
-  .featured-row { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .featured-row { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+
+  /* Army builder */
   .grade-meters { grid-template-columns: repeat(2,minmax(0,1fr)); }
+
+  /* Academy */
   .academy-grid { grid-template-columns: minmax(0,1fr); }
+
+  /* Admin */
   .kpis { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+
+  /* Support / profile */
   .support-grid, .profile-grid { grid-template-columns: minmax(0,1fr); }
-  .table { display: block; overflow-x: auto; white-space: nowrap; }
+
+  /* Tables scroll horizontally */
+  .data-table, .table { display: block; overflow-x: auto; white-space: nowrap; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Row-2 form grid → single column */
+  .row-2 { grid-template-columns: minmax(0,1fr); }
+
+  /* Modals full-width */
+  .modal { max-width: calc(100vw - 24px); border-radius: 6px; }
+  .info-modal-hero { grid-template-columns: minmax(0,1fr); }
+  .info-modal-piece { width: 64px; height: 64px; }
+
+  /* Admin tabs scroll */
+  .admin-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }

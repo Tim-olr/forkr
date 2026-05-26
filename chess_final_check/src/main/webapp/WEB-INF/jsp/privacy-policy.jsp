@@ -7,6 +7,7 @@
 <head>
     <%@ include file="_head.jsp" %>
     <style>
+        html, body { overflow-y: auto; height: auto; }
         body { background: var(--bg); color: var(--ink); font-family: var(--font-body, sans-serif); margin: 0; }
         .policy-wrap { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
         .policy-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
@@ -26,7 +27,7 @@
 <body>
 <div class="policy-wrap">
     <nav class="policy-nav">
-        <a href="${pageContext.request.contextPath}/home">Forkr</a>
+        <a href="${pageContext.request.contextPath}/home">Gambitonline</a>
         <span class="policy-nav-sep">/</span>
         <span style="font-size:14px;color:var(--ink-faint)">Privacy Policy</span>
     </nav>
@@ -34,7 +35,7 @@
     <h1>Privacy Policy</h1>
     <div class="policy-meta">Last updated: May 24, 2026 &nbsp;&middot;&nbsp; Effective: May 24, 2026</div>
 
-    <p>This Privacy Policy describes how Forkr (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) collects, uses, and discloses information about you when you use our chess platform and related services (collectively, the &ldquo;Service&rdquo;).</p>
+    <p>This Privacy Policy describes how Gambitonline (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) collects, uses, and discloses information about you when you use our chess platform and related services (collectively, the &ldquo;Service&rdquo;).</p>
 
     <div class="policy-section">
         <h2>1. Information We Collect</h2>
@@ -119,7 +120,7 @@
 
     <div style="margin-top:40px;padding-top:20px;border-top:1px solid var(--line);display:flex;gap:20px;font-size:13px">
         <a href="${pageContext.request.contextPath}/terms" style="color:var(--amber)">Terms of Service</a>
-        <a href="${pageContext.request.contextPath}/home" style="color:var(--ink-faint)">Back to Forkr</a>
+        <a href="${pageContext.request.contextPath}/home" style="color:var(--ink-faint)">Back to Gambitonline</a>
     </div>
 </div>
 </body>

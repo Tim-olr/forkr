@@ -1,67 +1,66 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="s" uri="/struts-tags" %>
+<%
+    pageContext.setAttribute("pageTitle", "Owner Setup");
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Owner Setup - Forkr</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chess.css">
+    <%@ include file="_head.jsp" %>
+    <style>
+    body { overflow: auto; }
+    .setup-wrap { min-height: 100vh; display: grid; place-items: center; padding: 40px 20px; background: var(--bg); }
+    .setup-card { width: 100%; max-width: 400px; }
+    </style>
 </head>
 <body>
-<nav class="navbar">
-    <a href="${pageContext.request.contextPath}/home" class="navbar-logo">
-        <span class="logo-icon">&#9816;</span>
-        <span class="logo-text">Forkr</span>
-    </a>
-</nav>
-
-<div class="auth-container">
-    <div class="auth-card">
-        <div class="auth-logo">
-            <div class="logo-icon">&#9876;</div>
-            <div class="logo-text" style="color:var(--error)">Owner Setup</div>
+<div class="setup-wrap">
+    <div class="setup-card">
+        <div style="text-align:center;margin-bottom:28px">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" style="margin-bottom:12px">
+                <rect x="2" y="18" width="20" height="3" rx="1" fill="#d4a44a"/>
+                <rect x="9" y="15" width="6" height="3" rx="0.5" fill="#d4a44a"/>
+                <circle cx="12" cy="10" r="4" fill="#d4a44a"/>
+                <circle cx="12" cy="10" r="1.5" fill="#14110d"/>
+            </svg>
+            <h1 class="display" style="font-size:30px;margin:0 0 6px;color:var(--crimson)">Owner Setup</h1>
+            <p style="color:var(--ink-mute);font-size:13px;margin:0">
+                This page is only available when no owner account exists.
+                Create the owner account to get started.
+            </p>
         </div>
-        <p style="text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:20px">
-            This page is only available when no owner account exists.
-            Create the owner account to get started.
-        </p>
 
         <s:if test="hasActionErrors()">
-            <ul class="error-list">
-                <s:iterator value="actionErrors">
-                    <li><s:property /></li>
-                </s:iterator>
-            </ul>
+            <div style="background:rgba(200,85,61,0.12);border:1px solid rgba(200,85,61,0.4);border-radius:4px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--crimson)">
+                <s:iterator value="actionErrors"><s:property /></s:iterator>
+            </div>
         </s:if>
 
         <s:form action="adminSetupSubmit" method="post" theme="simple">
-            <div class="form-group">
-                <label class="form-label" for="username">Username</label>
-                <s:textfield id="username" name="username" cssClass="form-input" placeholder="Admin username" />
+            <div class="form-row">
+                <label for="username">Username</label>
+                <s:textfield id="username" name="username" placeholder="Admin username" />
             </div>
-            <div class="form-group">
-                <label class="form-label" for="email">Email</label>
-                <s:textfield id="email" name="email" cssClass="form-input" placeholder="Admin email" />
+            <div class="form-row">
+                <label for="email">Email</label>
+                <s:textfield id="email" name="email" placeholder="Admin email" />
             </div>
-            <div class="form-group">
-                <label class="form-label" for="password">Password</label>
-                <s:password id="password" name="password" cssClass="form-input" placeholder="Create a strong password" />
+            <div class="form-row">
+                <label for="password">Password</label>
+                <s:password id="password" name="password" placeholder="Create a strong password" />
             </div>
-            <div class="form-group">
-                <label class="form-label" for="confirmPassword">Confirm Password</label>
-                <s:password id="confirmPassword" name="confirmPassword" cssClass="form-input" placeholder="Confirm password" />
+            <div class="form-row" style="margin-bottom:20px">
+                <label for="confirmPassword">Confirm Password</label>
+                <s:password id="confirmPassword" name="confirmPassword" placeholder="Confirm password" />
             </div>
-            <div class="form-submit">
-                <button type="submit" class="btn btn-full btn-lg" style="background:var(--error);color:#fff">
-                    Create Owner Account
-                </button>
-            </div>
+            <button type="submit" class="btn primary lg" style="width:100%;background:var(--crimson);border-color:var(--crimson)">
+                Create Owner Account
+            </button>
         </s:form>
 
-        <div class="auth-footer">
-            <a href="${pageContext.request.contextPath}/login">Back to Login</a>
-        </div>
+        <p style="margin-top:24px;text-align:center;font-size:13px;color:var(--ink-faint)">
+            <a href="${pageContext.request.contextPath}/login" style="color:var(--amber);text-decoration:none">&#8592; Back to Login</a>
+        </p>
     </div>
 </div>
 </body>

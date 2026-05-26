@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Play - Forkr</title>
+    <title>Play - Gambitonline</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap" rel="stylesheet">
@@ -84,6 +84,17 @@
         position: absolute; inset: 0; border-radius: 50%; pointer-events: none; z-index: 50;
         background: radial-gradient(circle, rgba(180,0,255,0.9) 0%, rgba(80,0,160,0.6) 50%, transparent 75%);
         animation: curseTrigger 0.7s ease-out forwards;
+    }
+    @keyframes oracleStartReveal {
+        0%   { opacity: 0; transform: scale(0.3); }
+        30%  { opacity: 1; }
+        70%  { opacity: 0.9; transform: scale(1.6); }
+        100% { opacity: 0; transform: scale(2.8); }
+    }
+    .oracle-start-reveal {
+        position: absolute; inset: 0; pointer-events: none; z-index: 50;
+        background: radial-gradient(circle, rgba(220,60,255,1) 0%, rgba(120,0,200,0.7) 40%, transparent 70%);
+        animation: oracleStartReveal 1.1s ease-out forwards;
     }
     @keyframes cursePulse {
         0%,100%{box-shadow:inset 0 0 0 2px rgba(180,0,255,0.5),inset 0 0 12px rgba(140,0,220,0.25);}
@@ -245,6 +256,7 @@ var PRESET_WHITE_ARMY = ${presetWhiteArmyJson};
 var PRESET_BLACK_ARMY = ${presetBlackArmyJson};
 var BOT_DATA = ${botDataJson};
 var ALL_BOTS = ${allBotsJson};
+var CURRENT_USER = '<s:property value="loggedInUsername" />';
 
 <%-- Piece registry from PieceRegistry.java --%>
 <% List<PieceDefinition> gamePieceDefs = PieceRegistry.getAll(); %>
@@ -1151,6 +1163,36 @@ function buildBoard(playerColor) {
     return {board, castling};
 }
 
+function applyOracleAutoStart() {
+    for (var _or = 0; _or < 8; _or++) {
+        for (var _oc = 0; _oc < 8; _oc++) {
+            var _op = gs.board[_or][_oc];
+            if (!_op || tp(_op) !== 'u') continue;
+            var _oColor = col(_op);
+            if (gs.oracleHasCursed[_oColor]) continue;
+            var _candidates = [];
+            for (var _tr = 2; _tr <= 5; _tr++) {
+                for (var _tc = 0; _tc < 8; _tc++) {
+                    if (!gs.board[_tr][_tc]) _candidates.push([_tr, _tc]);
+                }
+            }
+            if (!_candidates.length) continue;
+            var _pick = _candidates[Math.floor(Math.random() * _candidates.length)];
+            gs.oracleCursedTile = _pick;
+            gs.oracleHasCursed[_oColor] = true;
+            (function(rr, cc) {
+                setTimeout(function() {
+                    var boardEl = document.getElementById('chessBoard'); if (!boardEl) return;
+                    var cell = boardEl.querySelector('[data-row="'+rr+'"][data-col="'+cc+'"]'); if (!cell) return;
+                    var flash = document.createElement('div'); flash.className = 'oracle-start-reveal';
+                    cell.style.position = 'relative'; cell.appendChild(flash);
+                    flash.addEventListener('animationend', function() { flash.remove(); }, {once:true});
+                }, 700);
+            })(_pick[0], _pick[1]);
+        }
+    }
+}
+
 function startGame(playerColor, elo, bot) {
     currentBot = LOCAL_PLAY ? null : (bot || null);
     clearTimeout(periodicTimer);
@@ -1175,6 +1217,7 @@ function startGame(playerColor, elo, bot) {
         oracleCursedTile:null, oracleHasCursed:{w:false,b:false}, curseMode:false,
         localPlay: LOCAL_PLAY
     };
+    applyOracleAutoStart();
     updatePlayerPanels();
     render();
     playSound('game_start');
@@ -1777,7 +1820,10 @@ function renderBotCollectionList() {
 }
 
 // ── Bot game persistence (localStorage) ─────────────────────────────────────
-function _saveKey() { return BOT_DATA ? 'forkr_botgame_' + BOT_DATA.id : null; }
+function _saveKey() {
+    var u = CURRENT_USER || '_guest';
+    return BOT_DATA ? 'gambitonline_botgame_' + u + '_' + BOT_DATA.id : null;
+}
 
 function saveGameState() {
     const key = _saveKey();

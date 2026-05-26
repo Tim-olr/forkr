@@ -31,7 +31,11 @@ public class OnlineQueueAction extends JsonAction {
 
         OnlineGameStore.GameState existing = store.getGameForSession(sessionId);
         if (existing != null) {
-            return buildMatchedResponse(existing, sessionId);
+            if (!existing.gameOver) {
+                return buildMatchedResponse(existing, sessionId);
+            }
+            // Game is already finished — clear stale mapping so player can search again
+            store.clearSession(sessionId);
         }
 
         ArmyDAO dao = new ArmyDAO();

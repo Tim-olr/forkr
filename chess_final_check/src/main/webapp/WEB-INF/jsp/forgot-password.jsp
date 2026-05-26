@@ -1,57 +1,56 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="s" uri="/struts-tags" %>
+<%
+    pageContext.setAttribute("pageTitle", "Forgot Password");
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot Password - Forkr</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chess.css">
+    <%@ include file="_head.jsp" %>
+    <style>
+    body { overflow: auto; }
+    .auth-wrap { min-height: 100vh; display: grid; place-items: center; padding: 40px 20px; }
+    .auth-card { width: 100%; max-width: 400px; }
+    .auth-brand { display: flex; align-items: center; gap: 9px; justify-content: center; text-decoration: none; color: inherit; margin-bottom: 28px; }
+    </style>
 </head>
 <body>
-<nav class="navbar">
-    <a href="${pageContext.request.contextPath}/home" class="navbar-logo">
-        <span class="logo-icon">&#9816;</span>
-        <span class="logo-text">Forkr</span>
-    </a>
-    <div class="navbar-right">
-        <a href="${pageContext.request.contextPath}/login" class="btn btn-outline">Log In</a>
-    </div>
-</nav>
-
-<div class="auth-container">
+<div class="auth-wrap">
     <div class="auth-card">
-        <div class="auth-logo">
-            <div class="logo-icon">&#9816;</div>
-            <div class="logo-text">Forkr</div>
-        </div>
-        <h2 class="auth-title">Forgot Password</h2>
+        <a href="${pageContext.request.contextPath}/login" class="auth-brand">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                <rect x="2" y="18" width="20" height="3" rx="1" fill="#d4a44a"/>
+                <rect x="9" y="15" width="6" height="3" rx="0.5" fill="#d4a44a"/>
+                <circle cx="12" cy="10" r="4" fill="#d4a44a"/>
+                <circle cx="12" cy="10" r="1.5" fill="#14110d"/>
+            </svg>
+            <span style="font-family:var(--font-display);font-size:20px;letter-spacing:-0.01em">Gambitonline</span>
+        </a>
+
+        <h1 class="display" style="font-size:28px;margin:0 0 6px">Forgot password</h1>
+        <p class="sub" style="color:var(--ink-mute);margin-bottom:24px;font-size:14px">
+            Enter your email and we'll send you a reset link.
+        </p>
 
         <s:if test="submitted">
-            <div class="auth-success-box">
+            <div style="background:rgba(122,148,97,0.12);border:1px solid rgba(122,148,97,0.4);border-radius:4px;padding:12px 14px;margin-bottom:20px;font-size:13px;color:var(--moss)">
                 <s:property value="message"/>
             </div>
-            <a href="${pageContext.request.contextPath}/login" class="btn btn-green btn-full btn-lg" style="margin-top:8px">Back to Login</a>
+            <a href="${pageContext.request.contextPath}/login" class="btn primary lg" style="width:100%;justify-content:center">Back to Login</a>
         </s:if>
         <s:else>
-            <p style="color:var(--text-muted);font-size:14px;margin-bottom:20px;text-align:center;line-height:1.5">
-                Enter your email address and we'll send you a link to reset your password.
-            </p>
-
             <s:form action="forgotPasswordSubmit" method="post" theme="simple">
-                <div class="form-group">
-                    <label class="form-label" for="email">Email Address</label>
-                    <s:textfield id="email" name="email" cssClass="form-input" placeholder="Enter your email address"/>
+                <div class="form-row">
+                    <label for="email">Email Address</label>
+                    <s:textfield id="email" name="email" placeholder="Enter your email address"/>
                 </div>
-                <div class="form-submit">
-                    <button type="submit" class="btn btn-green btn-full btn-lg">Send Reset Link</button>
-                </div>
+                <button type="submit" class="btn primary lg" style="width:100%;justify-content:center;margin-top:4px">Send Reset Link</button>
             </s:form>
-
-            <div class="auth-footer">
-                <a href="${pageContext.request.contextPath}/login">Back to Login</a>
-            </div>
         </s:else>
+
+        <p style="margin-top:24px;font-size:13px;color:var(--ink-faint);text-align:center">
+            <a href="${pageContext.request.contextPath}/login" style="color:var(--amber);text-decoration:none">&#8592; Back to Login</a>
+        </p>
     </div>
 </div>
 </body>

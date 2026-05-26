@@ -38,29 +38,39 @@
           + '<path'+B+' d="M16 23 L29 23 L31 36 L14 36 Z"/>'
           + PED,
 
+        // Squire: stocky soldier with a shield emblem on the body
         sq: '<circle'+B+' cx="22.5" cy="13" r="4.6"/>'
-          + '<path'+B+' d="M18 17 L27 17 L28 22 L17 22 Z"/>'
-          + '<path'+B+' d="M16 22 L29 22 L31 36 L14 36 Z"/>'
+          + '<path'+B+' d="M17 17 L28 17 L29.5 22 L15.5 22 Z"/>'
+          + '<path'+B+' d="M15 22 L30 22 L32 36 L13 36 Z"/>'
+          + '<path'+A+' d="M19.5 24 L22.5 22.5 L25.5 24 L25.5 30 L22.5 32.5 L19.5 30 Z"/>'
           + PED,
 
-        lp: '<circle'+B+' cx="22.5" cy="13" r="4.6"/>'
-          + '<path'+B+' d="M18 17 L27 17 L28 22 L17 22 Z"/>'
-          + '<path'+B+' d="M16 22 L29 22 L31 36 L14 36 Z"/>'
+        // Longpaw: tall slender pawn with a smaller elevated head
+        lp: '<circle'+B+' cx="22.5" cy="9.5" r="3.8"/>'
+          + '<path'+B+' d="M19.5 13 L25.5 13 L27 22 L18 22 Z"/>'
+          + '<path'+B+' d="M17 22 L28 22 L30 36 L15 36 Z"/>'
           + PED,
 
-        rt: '<circle'+B+' cx="22.5" cy="13" r="4.6"/>'
-          + '<path'+B+' d="M18 17 L27 17 L28 22 L17 22 Z"/>'
+        // Retreater: diamond/chevron head with a downward arrow in body
+        rt: '<path'+B+' d="M22.5 8 L28 14 L22.5 17 L17 14 Z"/>'
+          + '<path'+B+' d="M17 17 L28 17 L29 22 L16 22 Z"/>'
           + '<path'+B+' d="M16 22 L29 22 L31 36 L14 36 Z"/>'
+          + '<path'+A+' d="M19.5 29 L25.5 29 L22.5 34 Z"/>'
           + PED,
 
+        // Hollow: ring head (hollow center) pawn
         ho: '<circle'+B+' cx="22.5" cy="13" r="4.6"/>'
+          + '<circle fill="FG" stroke="none" cx="22.5" cy="13" r="2.2"/>'
           + '<path'+B+' d="M18 17 L27 17 L28 22 L17 22 Z"/>'
           + '<path'+B+' d="M16 22 L29 22 L31 36 L14 36 Z"/>'
           + PED,
 
+        // Crawler: pawn with lateral claw protrusions on sides
         cr: '<circle'+B+' cx="22.5" cy="13" r="4.6"/>'
           + '<path'+B+' d="M18 17 L27 17 L28 22 L17 22 Z"/>'
           + '<path'+B+' d="M16 22 L29 22 L31 36 L14 36 Z"/>'
+          + '<path'+A+' d="M9 27 L16 24 L16 30 Z"/>'
+          + '<path'+A+' d="M36 27 L29 24 L29 30 Z"/>'
           + PED,
 
         // ── Grade 1 : Minor pieces ────────────────────────────────────────────

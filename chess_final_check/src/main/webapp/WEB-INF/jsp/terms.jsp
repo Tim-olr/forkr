@@ -7,6 +7,7 @@
 <head>
     <%@ include file="_head.jsp" %>
     <style>
+        html, body { overflow-y: auto; height: auto; }
         body { background: var(--bg); color: var(--ink); font-family: var(--font-body, sans-serif); margin: 0; }
         .policy-wrap { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
         .policy-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
@@ -26,7 +27,7 @@
 <body>
 <div class="policy-wrap">
     <nav class="policy-nav">
-        <a href="${pageContext.request.contextPath}/home">Forkr</a>
+        <a href="${pageContext.request.contextPath}/home">Gambitonline</a>
         <span class="policy-nav-sep">/</span>
         <span style="font-size:14px;color:var(--ink-faint)">Terms of Service</span>
     </nav>
@@ -34,11 +35,11 @@
     <h1>Terms of Service</h1>
     <div class="policy-meta">Last updated: May 24, 2026 &nbsp;&middot;&nbsp; Effective: May 24, 2026</div>
 
-    <p>Please read these Terms of Service (&ldquo;Terms&rdquo;) carefully before using Forkr. By creating an account or using the Service, you agree to be bound by these Terms.</p>
+    <p>Please read these Terms of Service (&ldquo;Terms&rdquo;) carefully before using Gambitonline. By creating an account or using the Service, you agree to be bound by these Terms.</p>
 
     <div class="policy-section">
         <h2>1. Acceptance of Terms</h2>
-        <p>By accessing or using Forkr (the &ldquo;Service&rdquo;), you confirm that you are at least 13 years of age, have read and understood these Terms, and agree to be bound by them. If you do not agree, do not use the Service.</p>
+        <p>By accessing or using Gambitonline (the &ldquo;Service&rdquo;), you confirm that you are at least 13 years of age, have read and understood these Terms, and agree to be bound by them. If you do not agree, do not use the Service.</p>
     </div>
 
     <div class="policy-section">
@@ -78,7 +79,7 @@
 
     <div class="policy-section">
         <h2>5. User Content</h2>
-        <p>You retain ownership of content you submit (such as profile pictures). By submitting content, you grant Forkr a non-exclusive, royalty-free, worldwide licence to use, display, and distribute that content in connection with operating the Service. You represent that you have all rights necessary to grant this licence.</p>
+        <p>You retain ownership of content you submit (such as profile pictures). By submitting content, you grant Gambitonline a non-exclusive, royalty-free, worldwide licence to use, display, and distribute that content in connection with operating the Service. You represent that you have all rights necessary to grant this licence.</p>
     </div>
 
     <div class="policy-section">
@@ -95,7 +96,7 @@
 
     <div class="policy-section">
         <h2>7. Intellectual Property</h2>
-        <p>All content on the Service (excluding user-submitted content) &mdash; including chess piece artwork, interface design, code, and game logic &mdash; is owned by or licensed to Forkr. You may not copy, modify, distribute, or create derivative works without our express written permission.</p>
+        <p>All content on the Service (excluding user-submitted content) &mdash; including chess piece artwork, interface design, code, and game logic &mdash; is owned by or licensed to Gambitonline. You may not copy, modify, distribute, or create derivative works without our express written permission.</p>
     </div>
 
     <div class="policy-section">
@@ -105,7 +106,7 @@
 
     <div class="policy-section">
         <h2>9. Limitation of Liability</h2>
-        <p>To the fullest extent permitted by law, Forkr shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of your use of or inability to use the Service, even if advised of the possibility of such damages.</p>
+        <p>To the fullest extent permitted by law, Gambitonline shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of your use of or inability to use the Service, even if advised of the possibility of such damages.</p>
     </div>
 
     <div class="policy-section">
@@ -127,7 +128,7 @@
 
     <div style="margin-top:40px;padding-top:20px;border-top:1px solid var(--line);display:flex;gap:20px;font-size:13px">
         <a href="${pageContext.request.contextPath}/privacy-policy" style="color:var(--amber)">Privacy Policy</a>
-        <a href="${pageContext.request.contextPath}/home" style="color:var(--ink-faint)">Back to Forkr</a>
+        <a href="${pageContext.request.contextPath}/home" style="color:var(--ink-faint)">Back to Gambitonline</a>
     </div>
 </div>
 </body>

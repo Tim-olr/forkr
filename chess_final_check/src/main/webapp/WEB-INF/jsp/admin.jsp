@@ -726,15 +726,15 @@
             </div>
             <%-- Voicelines / script lines --%>
             <% String[][] lineGroups = {
-                {"Idle Lines","editBotVoicelines","voicelines"},
-                {"G0 Take Lines","editBotG0Lines","g0capture"},
-                {"G1 Take Lines","editBotG1Lines","g1capture"},
-                {"G2 Take Lines","editBotG2Lines","g2capture"},
-                {"G0 Capture Lines","editBotG0TakeLines","g0take"},
-                {"G1 Capture Lines","editBotG1TakeLines","g1take"},
-                {"G2 Capture Lines","editBotG2TakeLines","g2take"},
-                {"Win Lines","editBotWinLines","winLines"},
-                {"Lose Lines","editBotLoseLines","loseLines"}
+                {"Idle Lines","editBotVoicelines","botVoicelines"},
+                {"G0 Capture Lines (bot's G0 piece taken)","editBotG0Lines","botG0Lines"},
+                {"G1 Capture Lines (bot's G1 piece taken)","editBotG1Lines","botG1Lines"},
+                {"G2 Capture Lines (bot's G2 piece taken)","editBotG2Lines","botG2Lines"},
+                {"G0 Take Lines (bot takes G0 piece)","editBotG0TakeLines","botG0TakeLines"},
+                {"G1 Take Lines (bot takes G1 piece)","editBotG1TakeLines","botG1TakeLines"},
+                {"G2 Take Lines (bot takes G2 piece)","editBotG2TakeLines","botG2TakeLines"},
+                {"Win Lines","editBotWinLines","botWinLines"},
+                {"Lose Lines","editBotLoseLines","botLoseLines"}
             }; %>
             <% for (String[] grp : lineGroups) { %>
             <div style="margin-top:12px">
